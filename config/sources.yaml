@@ -170,7 +170,10 @@ sources:
     homepage: https://econugblog.wordpress.com/
     url: https://econugblog.wordpress.com/feed/
     fields: [econ]
+    org_fallback: Econ UG Blog post
     title_must_match: "intern|research assistant|\\bra\\b|predoc|fellow|scholar|program|challenge|competition|conference|summit|insight|analyst"
+    # It's UC San Diego's blog: drop its campus-only events and info sessions.
+    title_must_not_match: "UC San Diego|UCSD|Triton|info session|information session|webinar|workshop"
     max_age_days: 60
     keep_missing_days: 60   # the feed only shows its latest ~10 posts
 
@@ -181,6 +184,7 @@ sources:
     homepage: https://theeconomicmisfit.com/
     url: https://theeconomicmisfit.com/feed/
     fields: [econ]
+    org_fallback: Economic Misfit post
     # Mostly research articles and postdoc jobs - keep only student-level posts.
     title_must_match: "research assistant|\\bra\\b|predoc|pre-doc|intern|undergrad|summer"
     title_must_not_match: "postdoc|post-doc|faculty|professor"

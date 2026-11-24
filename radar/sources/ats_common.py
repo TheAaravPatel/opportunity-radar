@@ -35,11 +35,18 @@ _YEAR_FIRST = re.compile(r"\b(20\d\d)\s+(summer|fall|autumn|winter|spring)\b", r
 _DAYS_AGO = re.compile(r"(\d+)\+?\s*days?\s+ago", re.I)
 
 
+def is_skipped_title(title: str, company: dict | None = None) -> bool:
+    """`skip_titles` in companies.yaml drops roles outside your fields at
+    employers that hire for everything (the Fed Board's photography intern)."""
+    skip = (company or {}).get("skip_titles") or []
+    return any(phrase.lower() in (title or "").lower() for phrase in skip)
+
+
 def is_student_title(title: str, company: dict | None = None) -> bool:
     """Internship-type title? A company can also accept e.g. "research assistant"
     roles via `extra_titles` in companies.yaml (think tanks, the Fed)."""
     title = title or ""
-    if NOT_STUDENT_TITLE.search(title):
+    if NOT_STUDENT_TITLE.search(title) or is_skipped_title(title, company):
         return False
     if STUDENT_TITLE.search(title):
         return True
@@ -110,6 +117,10 @@ def make_item(company: dict, ats: str, job_id: str, title: str, url: str, locati
     """Build the Item every ATS fetcher returns, filled in from the company entry."""
     key = company.get("slug") or company.get("tenant") or company.get("host") or company["name"]
     is_ra = company.get("group") == "econ" and _RA_TITLE.search(title or "") and not STUDENT_TITLE.search(title or "")
+    # Some boards use a building name as the location ("Federal Reserve Board");
+    # `location_map` in companies.yaml turns it into a real city.
+    location_map = company.get("location_map") or {}
+    locations = [location_map.get(place, place) for place in locations]
     return Item(
         source_item_id=f"{ats}:{key}:{job_id}",
         title=title.strip(),

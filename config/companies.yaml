@@ -19,7 +19,9 @@
 #            text; others filter locally). Default: [intern]
 #   early_career_only  true -> keep only postings matching early-career keywords
 #   extra_titles       also keep titles containing these (e.g. research assistant)
+#   skip_titles        drop titles containing these (roles outside your fields)
 #   title_org_map      {text in title: real employer} for shared boards (the Fed)
+#   location_map       {board's location text: real city} ("Federal Reserve Board" -> DC)
 #   enabled  false -> skip (keeps the entry for reference)
 #   notes    why it's here / anything odd
 #
@@ -108,8 +110,9 @@ companies:
     site: FRS
     group: econ
     fields: [econ]
-    search: [intern, research assistant]
-    extra_titles: [research assistant, research analyst]
+    # Full-time research assistant jobs (2-year, need a bachelor's) are left
+    # out for now. Senior year, add:  search: [intern, research assistant]
+    # and  extra_titles: [research assistant, research analyst]
     title_org_map:
       SF Fed: Federal Reserve Bank of San Francisco
       San Francisco Fed: Federal Reserve Bank of San Francisco
@@ -137,9 +140,12 @@ companies:
     domain: myworkdayjobsgov.com
     group: econ
     fields: [econ]
-    search: [intern, research assistant]
-    extra_titles: [research assistant]
-    notes: Workday Government Cloud (not the shared Reserve Bank board). Internships are US-citizens-only.
+    location_map: {Federal Reserve Board: "Washington, DC"}
+    # The Board hires interns for everything; these aren't econ / CS / biotech.
+    skip_titles: [graphic design, photography, digital media, public affairs, eeo, research library]
+    notes: >-
+      Workday Government Cloud (not the shared Reserve Bank board) - works from
+      GitHub Actions. Internships are US-citizens-only.
 
   - name: The Brattle Group
     ats: greenhouse
@@ -178,7 +184,7 @@ companies:
     site: MMC
     group: econ
     fields: [econ]
-    search: [NERA intern, NERA research]
+    search: [NERA intern]
     notes: Parent Marsh McLennan's board; site name inferred - verify.
 
   - name: Urban Institute
@@ -188,8 +194,6 @@ companies:
     site: Urban-Careers
     group: econ
     fields: [econ]
-    search: [intern, research assistant]
-    extra_titles: [research assistant]
     notes: Newest posting seen on wd115 - may be migrating; verify checks both.
 
   - name: RAND Corporation
@@ -199,8 +203,8 @@ companies:
     site: External_Career_Site
     group: econ
     fields: [econ]
-    search: [intern, research assistant]
-    extra_titles: [research assistant]
+    skip_titles: [summer associate]
+    notes: RAND's Summer Associate program is for PhD students, so it's skipped.
 
   - name: Pew Research Center
     ats: workday
@@ -209,11 +213,16 @@ companies:
     site: CenterExternal
     group: econ
     fields: [econ]
-    search: [intern, research assistant]
-    extra_titles: [research assistant]
 
-  # No public API -> watched as pages instead (Phase 3): Analysis Group (iCIMS),
-  # Brookings (iCIMS), Bates White (viRecruit), Edgeworth (Paylocity), Mathematica.
+  # Checked from GitHub Actions on 2026-11-24: Brattle, CRA, the Fed Board,
+  # Cornerstone and RAND answered; the regional Fed, Compass Lexecon, NERA,
+  # Urban and Pew got Workday's bot challenge (it comes and goes - RAND was
+  # blocked in one run and fine in the next). Blocked boards are reported as a
+  # failed sub-feed and never close their jobs; SimplifyJobs lists many Fed roles.
+  #
+  # No public API -> manual links in settings.yaml for now, page-watcher later:
+  # Analysis Group (iCIMS), Brookings (iCIMS), Bates White (viRecruit),
+  # Edgeworth (Paylocity), Mathematica.
 
   # --------------------------------------------- early-career (Phase 5) ----
   - name: Citi

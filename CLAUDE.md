@@ -42,11 +42,13 @@ radar/
   db.py            SQLite schema (one file, `CREATE TABLE IF NOT EXISTS`)
   sources/         one module per source type, registered with @register("type")
                    ats_*.py = one job-board API each; companies.py loops companies.yaml
+                   rss_feed.py = generic RSS/Atom reader (config-only blog sources)
   ats_discovery.py guesses Greenhouse/Lever/Ashby board names for `ats: unknown` companies
   classify.py, eligibility.py, early_detect.py, normalize.py, timeutil.py
   dashboard/       build.py + templates/index.html.j2 + static/app.js, app.css
   digest.py + templates/digest.*.j2
   verify.py        live check of every source + registry URL (no DB writes)
+  probe.py         outline any public URL's HTML/JSON/feed (Verify workflow `probe_urls` input)
 tests/             pytest; fixtures are real samples captured from sources
 docs/SOURCES.md    source verification report (what exists, formats, caveats)
 scripts/           load-db.sh / save-db.sh (database ↔ `data` branch)
@@ -98,6 +100,12 @@ Use `RADAR_NOW=2027-01-05T15:00:00Z` to pretend it's another date (tests do this
   no_location (partial too if `allow_partial`). Regions check the state ("Richmond, VA" isn't
   the Bay Area); "covered" needs a registry `travel_covered: full` or description phrases for
   BOTH housing and travel (`keywords.yaml -> travel`, negations ignored, titles never used).
+- **Secrets**: a source with `requires_env: [NAME]` is skipped (health "needs secret", nothing
+  closed, not counted as failing) until the env var/GitHub Secret exists. Verify reports the same.
+- **Econ job boards**: `title_org_map` names the real employer on shared boards (12 Reserve Banks,
+  one Workday board), `location_map` fixes non-city locations, `skip_titles` drops off-field roles.
+  Full-time post-BA RA roles are deliberately off (no `extra_titles`, predoc_fulltime disabled)
+  until senior year; the post-bacc eligibility rule demotes any that slip in.
 - **Schema changes**: add new columns to `ADDED_COLUMNS` in db.py so the database already on
   the data branch is upgraded in place.
 - **Claude API** (later phases): model from `settings.yaml` (`claude-opus-5-5`), only for
@@ -108,6 +116,8 @@ Use `RADAR_NOW=2027-01-05T15:00:00Z` to pretend it's another date (tests do this
 - **A source**: write `radar/sources/<name>.py` with `@register("<type>")` + `fetch() ->
   FetchResult`, import it in `radar/sources/__init__.py`, add an entry in `config/sources.yaml`,
   add a test with a captured fixture. The pipeline handles the rest.
+- **An RSS/Atom feed**: config only - an `rss_feed` entry in `sources.yaml` (title filters,
+  `org_fallback`, `max_age_days`, `keep_missing_days`).
 - **A company / early program / Stanford page**: edit the YAML (format documented at the top of
   each file). `tests/test_config.py` validates them.
 
@@ -120,7 +130,9 @@ Use `RADAR_NOW=2027-01-05T15:00:00Z` to pretend it's another date (tests do this
 ## Build phases (status)
 1. ✅ SimplifyJobs end to end + zshah101 + Jobs Every Hour; registries' known deadlines
 2. ✅ Biotech repo + Greenhouse/Lever/Ashby/Workday fetchers (`ats_companies` source, `skip_if_covered_by`, board discovery in verify)
-3. ⏳ Econ: PREDOC, Fed (Workday), USAJobs, econ RSS, EconJobMarket (disabled), consulting ATS
+3. ✅ Econ: PREDOC RA page, Fed Board + regional Fed (Workday), USAJobs (needs secrets), econ RSS
+   blogs (Econ UG Blog, Economic Misfit), EconJobMarket (disabled), Brattle/CRA/Cornerstone/RAND +
+   Workday consulting boards; no-API employers are manual links until the page-watcher
 4. ⏳ Page-watcher (snapshot/diff/Playwright, deadline extraction) for Stanford pages
 5. ⏳ Early-programs registry watching + keyword detection + bank/trading ATS (incl. Oracle)
 6. ✅ Conferences & hackathons (built before 3-5 at the owner's request): conferences.yaml (41), student-opportunities, BadgeUp; name+year dedupe with TBA matching and `aka` aliases

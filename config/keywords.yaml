@@ -50,6 +50,10 @@ fields:
     - sre
     - site reliability
     - infrastructure engineer
+    - platform engineer
+    - research computing
+    - information technology
+    - application development
     - hackathon
   econ:
     - economics
@@ -137,7 +141,7 @@ eligibility:
     - pattern: '\b(ph\.?\s?d|doctoral|postdoc|post-doc|postdoctoral)\b'
       points: -30
       reason: PhD-level role
-    - pattern: "\\b(master'?s|mba|m\\.s\\.|ms student|graduate students?|grad students?)\\b"
+    - pattern: "\\b(master'?s|mba|m\\.s\\.|ms student|graduate students?|grad students?|graduate interns?|graduate internships?)\\b"
       points: -25
       reason: For graduate students
     - pattern: '\b(non-stanford|other (universities|institutions|schools)|outside (of )?stanford|not (currently )?(enrolled|attending) (at )?stanford)\b'

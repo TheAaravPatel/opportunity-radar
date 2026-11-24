@@ -18,7 +18,7 @@ Workday only reports `total` on the first page of a search.
 from __future__ import annotations
 
 from radar.http import Http
-from radar.sources.ats_common import is_student_title, make_item, relative_posted, split_locations
+from radar.sources.ats_common import is_skipped_title, is_student_title, make_item, relative_posted, split_locations
 from radar.timeutil import today_local
 
 PAGE = 20
@@ -43,7 +43,8 @@ def fetch_company(company: dict, http: Http) -> list:
                 path = posting.get("externalPath")
                 # An empty search term means "this whole board is student-focused"
                 # (e.g. Citi's early-careers board), so keep everything on it.
-                if path and (term == "" or is_student_title(posting.get("title", ""), company)):
+                title = posting.get("title", "")
+                if path and ((term == "" and not is_skipped_title(title, company)) or is_student_title(title, company)):
                     found.setdefault(path, posting)
             if len(postings) < PAGE or (page + 1) * PAGE >= total:
                 break

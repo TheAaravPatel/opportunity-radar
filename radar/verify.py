@@ -19,6 +19,7 @@ from bs4 import BeautifulSoup
 from radar.ats_discovery import discovery_report
 from radar.config import ROOT, Config
 from radar.http import BlockedError, Http
+from radar.pipeline import missing_secrets
 from radar.sources import build_source
 from radar.timeutil import today_local
 
@@ -34,6 +35,10 @@ def verify_sources(cfg: Config, http: Http, only: str | None = None) -> list[str
             continue
         if not only and not options.get("enabled", True):
             lines.append(f"| {source_id} | disabled | | | |")
+            continue
+        missing = missing_secrets(options)
+        if missing:
+            lines.append(f"| {source_id} | ⏸ needs secret: {', '.join(missing)} | | | |")
             continue
         started = time.monotonic()
         try:

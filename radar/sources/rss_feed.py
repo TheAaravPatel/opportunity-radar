@@ -76,13 +76,27 @@ def _type_for(title: str) -> str:
     return "industry internship"
 
 
+# A title part with these words is a description, not an employer's name.
+_NOT_AN_ORG = re.compile(r"\b(20\d\d|summer|fall|spring|winter|apply|application|deadline|program|intern|internship)\b", re.I)
+_UNIVERSITY = re.compile(r"\b(University of [A-Z][\w]+(?: (?!Program|Summer|Research)[A-Z][\w]+(?![\w-]))?|(?!The )[A-Z][\w]+ (?:State )?University)\b")
+_ORG_THEN_YEAR = re.compile(r"^([A-Z][\w&.,' ]{1,40}?)\s+20\d\d\b")
+
+
 def _organization(title: str, fallback: str) -> str:
-    """'Cost Accountant Intern – Summer 2027 – NVIDIA' -> 'NVIDIA'; '... at Johns Hopkins' -> 'Johns Hopkins'."""
+    """Best guess at the employer from a blog post title, trying in order:
+      'Cost Accountant Intern – Summer 2027 – NVIDIA'      -> 'NVIDIA'        (last part)
+      'Postdoctoral Fellowship at Johns Hopkins University' -> 'Johns Hopkins University'
+      'Bain & Company 2027 CREW Program – Apply by ...'     -> 'Bain & Company' (name before the year)
+      'The University of Zurich Pre-Doctoral Program'       -> 'University of Zurich'
+    and otherwise the feed's name."""
     parts = [p.strip() for p in re.split(r"\s+[–—-]\s+", title) if p.strip()]
-    if len(parts) >= 2 and not re.search(r"\b(20\d\d|summer|fall|spring|winter|apply)\b", parts[-1], re.I):
+    if len(parts) >= 2 and len(parts[-1].split()) <= 5 and not _NOT_AN_ORG.search(parts[-1]):
         return parts[-1]
-    match = re.search(r"\bat\s+([A-Z][\w&.,' ]{2,60})$", title)
-    return match.group(1).strip() if match else fallback
+    for pattern in (re.compile(r"\bat\s+([A-Z][\w&.,' ]{2,60})$"), _ORG_THEN_YEAR, _UNIVERSITY):
+        match = pattern.search(parts[0] if parts else title)
+        if match:
+            return match.group(1).strip(" ,")
+    return fallback
 
 
 @register("rss_feed")
@@ -97,7 +111,8 @@ def parse_rss_items(posts: list[dict], options: dict, today: date) -> FetchResul
     must_not = re.compile(options["title_must_not_match"], re.I) if options.get("title_must_not_match") else None
     max_age = int(options.get("max_age_days", 60))
     oldest = (today - timedelta(days=max_age)).isoformat()
-    feed_name = options.get("name", "feed")
+    # Shown as the organization when a title doesn't name one.
+    feed_name = options.get("org_fallback") or options.get("name", "feed")
     items, skipped = [], 0
     for post in posts:
         title = re.sub(r"\s+", " ", post["title"]).strip()

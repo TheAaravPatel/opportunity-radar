@@ -155,3 +155,21 @@ matched the parser)**, and both registries. Of the 73 registry URLs:
 - **config/conferences.yaml** holds 41 hand-checked entries (CS, hackathons, biotech, econ,
   Stanford-hosted) with travel-scholarship, abstract and registration deadlines verified by web
   search on 2026-11-24. 17 of them also appear in the feeds and are merged into one card.
+
+## Economics (built 2026-11-24, checked live from GitHub Actions)
+
+| Source | Result | Notes |
+|---|---|---|
+| PREDOC part-time & summer RA page | ✅ 14 listings | Server-rendered `<article>` cards with "Label: value" pairs; past deadlines come out closed (e.g. the Fed Board summer internship, due Oct 31). Full-time page parsed by the same module, disabled until senior year. |
+| Econ UG Blog (WordPress RSS) | ✅ 7 of 10 posts kept | UC San Diego's econ opportunities blog. Title filters drop info sessions and UCSD-only events; "Apply by" dates become deadlines. |
+| The Economic Misfit (RSS) | ✅ 1 of 10 posts kept | Mostly research articles and postdoc ads, filtered out by title. |
+| appliedeconjobs (Substack) | ❌ HTTP 403 | Substack's bot protection blocks GitHub's servers → disabled. |
+| USAJobs | ⏸ needs secrets | The hiring-path code list (public) answered; searches need `USAJOBS_API_KEY` + `USAJOBS_EMAIL`. Student hiring path code is `STUDENT`. |
+| EconJobMarket JSON | ✅ 311 ads (disabled) | Official public feed works; almost all ads are PhD/faculty. Disabled until EJM agrees to re-display. |
+| Federal Reserve Board (Workday Gov Cloud) | ✅ 18 internships | Location text is "Federal Reserve Board" → `location_map` to Washington, DC; photography / graphic design / EEO / public affairs roles skipped. |
+| Brattle (Greenhouse) / CRA (Greenhouse) | ✅ 7 / 8 internships | CRA's are mostly for 2028 graduates (scored low for you, correctly). |
+| Cornerstone Research (Workday wd501) | ✅ 0 internships right now | Its First-Year Foundations / Sophomore Summit programs are in the early-program registry (open Mar 1, 2027). |
+| RAND (Workday wd5) | ✅ / 🚫 intermittently | Only posting is the PhD Summer Associate program → skipped. |
+| Regional Fed `rb/FRS`, Compass Lexecon, NERA, Urban, Pew (Workday) | 🚫 bot challenge (HTTP 429) | Reported as failed sub-feeds; they never close jobs. Simplify lists many Fed roles. |
+| NBER, Analysis Group, Brookings, Bates White, Edgeworth, Mathematica | manual links | NBER's terms forbid monitoring; the others have no public job API (page-watcher later). |
+

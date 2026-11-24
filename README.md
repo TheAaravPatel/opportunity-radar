@@ -42,8 +42,8 @@ workflow artifacts.
    | `GMAIL_ADDRESS` | the Gmail address that sends the digest | email digest |
    | `GMAIL_APP_PASSWORD` | a Gmail **app password**, not your normal password: Google Account → Security → 2-Step Verification (must be on) → App passwords → create one named "Opportunity Radar" | email digest |
    | `DIGEST_TO` | where to send it (optional; defaults to `GMAIL_ADDRESS`) | email digest |
-   | `USAJOBS_API_KEY` | free key from <https://developer.usajobs.gov/apirequest/> | federal econ internships (Phase 3) |
-   | `USAJOBS_EMAIL` | the email you registered the USAJobs key with (USAJobs requires it as the User-Agent) | Phase 3 |
+   | `USAJOBS_API_KEY` | free key from <https://developer.usajobs.gov/apirequest/> | federal student (Pathways) econ/statistics roles; until both are set the source shows "needs secret" |
+   | `USAJOBS_EMAIL` | the email you registered the USAJobs key with (USAJobs requires it as the User-Agent) | USAJobs |
    | `ANTHROPIC_API_KEY` | from <https://console.anthropic.com/> | Claude fallbacks + weekly discovery (later phases) |
 
    Anything missing just turns that feature off. Nothing else breaks.
@@ -93,6 +93,9 @@ Each source is one Python module plus one config entry.
    ```
 4. Add a test in `tests/` using a saved sample of the real response.
 
+Need a GitHub Secret (an API key)? Add `requires_env: [MY_API_KEY]` to the entry: until the
+secret exists the source shows "needs secret" instead of failing.
+
 The pipeline does the rest: deduplication, field classification, eligibility scoring, marking
 items closed when they disappear, and source health.
 
@@ -106,10 +109,36 @@ Add an entry to `config/companies.yaml`. Find the ATS from the company's careers
 | `jobs.ashbyhq.com/acme` | `ats: ashby, slug: acme` |
 | `acme.wd5.myworkdayjobs.com/AcmeCareers` | `ats: workday, tenant: acme, host: wd5, site: AcmeCareers` |
 
+Optional per-company settings (all explained at the top of the file): `search` (Workday search
+words), `skip_titles` (drop roles outside your fields, like the Fed Board's photography intern),
+`location_map` (turn a board's "Federal Reserve Board" into "Washington, DC"), `title_org_map`
+(name the real employer on a shared board - all 12 Federal Reserve Banks use one), and
+`extra_titles` (also keep e.g. "Research Assistant" roles; off for now because those are
+full-time jobs that need a degree).
+
 Biotech companies already covered by the biotech GitHub repo don't need an entry (a test checks,
 and the fetcher re-checks that repo's `companies.json` every run). Keep the Workday list short (see
 the warning at the top of the file). Don't know the ATS? Add it with `ats: unknown`: the
 **Verify sources** report then tries likely Greenhouse/Lever/Ashby board names and lists the hits.
+
+### Add a blog or news feed (no code)
+Any site with an RSS or Atom feed (WordPress sites have one at `/feed/`) needs only a config
+entry, using the generic `rss_feed` type:
+```yaml
+  my_econ_blog:
+    type: rss_feed
+    group: daily
+    name: My econ blog
+    homepage: https://myeconblog.org/
+    url: https://myeconblog.org/feed/
+    fields: [econ]
+    title_must_match: "intern|research assistant|fellowship|program"   # keep only these posts
+    title_must_not_match: "postdoc|faculty"                            # ...and never these
+    max_age_days: 60
+    keep_missing_days: 60      # feeds only show their newest posts
+```
+"Apply by <date>" / "Deadline: <date>" and "Location: ..." lines in a post become the deadline
+and location. Run **Verify sources** with the source id to check the feed works from GitHub.
 
 ### Add an early-career program
 Add an entry to `config/early_programs.yaml` (every field is explained at the top of that file):
@@ -187,7 +216,8 @@ to hide remote roles.
   Run **Verify sources** to see the live response. A failing source never closes items or
   stops other sources.
 - **Workday sources fail with "bot protection challenge"**: Workday's Cloudflare is blocking
-  GitHub's servers. That's expected sometimes, and SimplifyJobs still covers many of those
-  employers.
+  GitHub's servers. That's expected sometimes (it comes and goes per board), a blocked board
+  never closes its jobs, and SimplifyJobs still covers many of those employers.
+- **A source shows "needs secret"**: add the GitHub Secret(s) it names (see the table above).
 - **No email arrived**: check the `GMAIL_*` secrets and the "Send the email digest" step log.
   No email also simply means nothing was new or due.
