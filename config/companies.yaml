@@ -75,7 +75,14 @@ companies:
     enabled: false
     notes: Greenhouse board "10xgenomics" now returns 404 - they moved ATS. Re-discover.
 
-  # ATS still to discover (Phase 2 tries common slugs automatically):
+  # ATS still to discover. The Verify sources report guesses Greenhouse/Lever/
+  # Ashby board names for these; results on 2026-11-24 (none usable yet):
+  #   * no Greenhouse/Lever/Ashby board: 10x Genomics, Guardant, Denali, Calico,
+  #     Verily, Cytokinetics, Bio-Rad, Vir, Mammoth, EvolutionaryScale, Atomwise
+  #     (likely Workday, iCIMS or their own careers sites)
+  #   * look-alikes that are NOT these companies - don't add them:
+  #     greenhouse:caribou (a Chicago fintech), ashby:scribe (a software company)
+  #   * unconfirmable: lever:allogene (0 jobs), greenhouse:nkarta (only a test posting)
   - {name: Guardant Health, ats: unknown, group: biotech, fields: [biotech], enabled: false}
   - {name: Denali Therapeutics, ats: unknown, group: biotech, fields: [biotech], enabled: false}
   - {name: Calico Life Sciences, ats: unknown, group: biotech, fields: [biotech], enabled: false}
