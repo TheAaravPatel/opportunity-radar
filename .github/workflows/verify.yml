@@ -1,9 +1,11 @@
-# Manual check of every source and registry URL. Writes nothing to the database.
+# Check every source and registry URL (weekly, or on demand). Writes nothing to the database.
 # Run it from the Actions tab ("Verify sources" -> "Run workflow"); the report
 # appears on the run's summary page.
 name: Verify sources
 
 on:
+  schedule:
+    - cron: "23 16 * * 0"      # Sundays 16:23 UTC: weekly check for dead or stale URLs
   workflow_dispatch:
     inputs:
       source:
