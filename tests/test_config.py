@@ -30,6 +30,9 @@ def check_entries(entries, name_key):
             assert re.match(r"^\d{4}-\d{2}-\d{2}$", str(d["date"])), e["id"]
         if e.get("typical_open_month") is not None:
             assert 1 <= int(e["typical_open_month"]) <= 12, e["id"]
+        if e.get("watch") is not None:
+            assert isinstance(e["watch"], bool), e["id"]
+            assert e["watch"] or e.get("watch_note"), f"{e['id']}: say why it isn't watched"
 
 
 def test_early_programs_registry(cfg):

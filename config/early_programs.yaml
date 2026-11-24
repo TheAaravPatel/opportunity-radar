@@ -33,6 +33,9 @@
 #                       approx: true when the date is an estimate
 #   notes               anything else worth knowing
 #   last_verified       when/how this entry was last checked
+#   watch               false -> the page-watcher skips this page (it blocks bots
+#                       or needs a login). Known deadlines still show up.
+#   watch_note          why it isn't watched
 #
 # Seeded 2026-11-24 from web research (official pages + student trackers such as
 # Extern/Prospect Rock). "verified-search" = confirmed via search results, not by
@@ -144,7 +147,7 @@ programs:
     format: virtual series
     url: https://www.goldmansachs.com/careers/students/programs-and-internships/americas/undergrad-virtual-insight-series
     status_hint: possibly discontinued
-    notes: Reported no longer listed as of Oct 2026 (Prospect Rock Partners).
+    notes: Reported no longer listed as of Oct 2026 (Prospect Rock Partners); the program page returns 404 (checked 2026-11-24).
     last_verified: 2026-11-24 verified-search
 
   - id: morgan-stanley-early-insights
@@ -153,7 +156,7 @@ programs:
     fields: [econ]
     class_years: [sophomore]
     format: virtual series
-    url: https://www.morganstanley.com/careers/students-graduates
+    url: https://www.morganstanley.com/people-opportunities/students-graduates
     typical_open_month: 9
     status_hint: active
     notes: >-
@@ -168,7 +171,7 @@ programs:
     fields: [econ]
     class_years: [sophomore]
     format: paid summer
-    url: https://www.morganstanley.com/careers/students-graduates
+    url: https://www.morganstanley.com/people-opportunities/students-graduates
     typical_open_month: 8
     status_hint: active
     notes: >-
@@ -184,13 +187,15 @@ programs:
     fields: [econ]
     class_years: [sophomore]
     format: paid summer
-    url: https://careers.jpmorgan.com/us/en/students/programs
+    url: https://www.jpmorganchase.com/careers/explore-opportunities/programs/jpmcfellowship
     typical_open_month: 11
     status_hint: renamed
     notes: >-
       Formerly the Advancing Black Pathways Fellowship; now open to all
-      backgrounds. 5-week paid summer. Applications from ~Nov, deadline ~mid-Jan.
-      JPMorgan postings are on Oracle (polled via companies.yaml).
+      sophomores regardless of background. 5-week paid summer; leads to
+      consideration for the next summer's internship. 2026 cycle: graduating
+      Dec 2027-Summer 2028, deadline ~Jan 12-13, rolling review. JPMorgan
+      postings are on Oracle (polled via companies.yaml).
     last_verified: 2026-11-24 verified-search (Opportunities for Youth)
 
   - id: lazard-early-insights
@@ -298,6 +303,8 @@ programs:
       - {kind: application, date: 2027-03-05, label: Application deadline}
     notes: For undergrads graduating Dec 2028-Jun 2030 (includes freshmen).
     last_verified: 2026-11-24 verified-search (official page)
+    watch: false
+    watch_note: Citadel's sites block automated requests (bot protection); Simplify and zshah101 carry Citadel's postings.
 
   - id: discover-citadel-securities
     firm: Citadel Securities
@@ -312,6 +319,8 @@ programs:
     deadlines:
       - {kind: application, date: 2027-03-05, label: Application deadline}
     last_verified: 2026-11-24 verified-search (official page)
+    watch: false
+    watch_note: Citadel's sites block automated requests (bot protection); Simplify and zshah101 carry Citadel's postings.
 
   - id: citadel-securities-sophomore-quant
     firm: Citadel Securities
@@ -325,6 +334,8 @@ programs:
     status_hint: active
     notes: Terms & conditions PDF for the 2026-2027 program is dated Nov 2026.
     last_verified: 2026-11-24 verified-search
+    watch: false
+    watch_note: Citadel's sites block automated requests (bot protection); Simplify and zshah101 carry Citadel's postings.
 
   - id: citadel-launch
     firm: Citadel
@@ -336,6 +347,8 @@ programs:
     status_hint: possibly discontinued
     notes: No 2027 posting visible as of Aug 2026 (PracHub).
     last_verified: 2026-11-24 verified-search
+    watch: false
+    watch_note: Citadel's sites block automated requests (bot protection); Simplify and zshah101 carry Citadel's postings.
 
   - id: jane-street-fttp
     firm: Jane Street
@@ -393,6 +406,8 @@ programs:
     status_hint: active
     notes: 2026 ran May 18-20. HRT dropped its sophomore summer internship for 2027.
     last_verified: 2026-11-24 verified-search (official page)
+    watch: false
+    watch_note: hudsonrivertrading.com refuses automated requests (HTTP 403); HRT's Greenhouse board is polled instead.
 
   - id: imc-launchpad
     firm: IMC Trading
@@ -439,9 +454,12 @@ programs:
     class_years: [freshman, sophomore]
     format: summit
     location: Capital One HQ (held Jan, May, Aug)
-    url: https://campus.capitalone.com/summits/
+    url: https://www.capitalonecareers.com/get-ahead-with-early-career-programs-for-students
     status_hint: active
-    notes: Invitation-only; interest forms. 5-day Tech Summit, 2-day Analyst/Product/Finance summits.
+    notes: >-
+      Invitation-only; interest forms. 5-day Tech Summit, 2-day Analyst/Product/Finance
+      summits (Analyst Summit: first-years/sophomores in quantitative majors). The old
+      campus.capitalone.com/summits address no longer resolves (checked 2026-11-24).
     last_verified: 2026-11-24 verified-search
 
   - id: capital-one-early-internship
@@ -465,7 +483,7 @@ programs:
     fields: [econ]
     class_years: [freshman, sophomore]
     format: paid summer
-    url: https://apply.deloitte.com/careers/SearchJobs
+    url: https://apply.deloitte.com/en_US/careers/SearchJobs
     typical_open_month: 12
     status_hint: active
     notes: >-

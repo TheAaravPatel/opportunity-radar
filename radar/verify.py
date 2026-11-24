@@ -17,7 +17,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 
 from radar.config import ROOT, Config
-from radar.http import Http
+from radar.http import BlockedError, Http
 from radar.sources import build_source
 from radar.timeutil import today_local
 
@@ -51,13 +51,16 @@ def verify_sources(cfg: Config, http: Http, only: str | None = None) -> list[str
     return lines
 
 
-def registry_urls(cfg: Config) -> list[tuple[str, str, str]]:
-    """(registry, id, url) for every URL in the YAML registries."""
+LOGIN_HINTS = ("/login", "webauth", "weblogin", "/sso/", "idp.stanford.edu", "signin")
+
+
+def registry_urls(cfg: Config) -> list[tuple[str, str, str, bool]]:
+    """(registry, id, url, watched?) for every URL in the YAML registries."""
     urls = []
     for entry in (cfg.load_file("early_programs.yaml") or {}).get("programs", []) or []:
-        urls.append(("early_programs", entry["id"], entry["url"]))
+        urls.append(("early_programs", entry["id"], entry["url"], entry.get("watch", True)))
     for entry in (cfg.load_file("watched_pages.yaml") or {}).get("pages", []) or []:
-        urls.append(("watched_pages", entry["id"], entry["url"]))
+        urls.append(("watched_pages", entry["id"], entry["url"], entry.get("watch", True)))
     return urls
 
 
@@ -68,18 +71,24 @@ def verify_urls(cfg: Config, http: Http) -> list[str]:
         f"Mentions = which of {sorted(years)} appear on the page (none = possibly stale).", "",
         "| Registry | Id | Result | Text chars | Mentions | Final URL |", "|---|---|---|---|---|---|",
     ]
-    for registry, entry_id, url in registry_urls(cfg):
+    for registry, entry_id, url, watched in registry_urls(cfg):
+        label = entry_id if watched else f"{entry_id} (watch: false)"
         try:
             response = http.get(url)
+        except BlockedError as exc:
+            lines.append(f"| {registry} | {label} | 🚫 blocks bots - set watch: false ({_cell(exc)}) | | | {_cell(url)} |")
+            continue
         except Exception as exc:  # noqa: BLE001
-            lines.append(f"| {registry} | {entry_id} | ❌ {_cell(type(exc).__name__ + ': ' + str(exc))} | | | {_cell(url)} |")
+            lines.append(f"| {registry} | {label} | ❌ {_cell(type(exc).__name__ + ': ' + str(exc))} | | | {_cell(url)} |")
             continue
         text = BeautifulSoup(response.text, "html.parser").get_text(" ", strip=True)
         found = sorted(y for y in years if y in text)
+        final = str(response.url)
         verdict = "✅" if found else "⚠️ no current-cycle year"
         if len(text) < 300:
             verdict = "⚠️ almost no text (JavaScript-rendered or blocked?)"
-        final = str(response.url)
+        if any(hint in final.lower() for hint in LOGIN_HINTS):
+            verdict = "🔒 redirects to a login page - must not be watched"
         lines.append(
             f"| {registry} | {entry_id} | {verdict} (HTTP {response.status_code}) | {len(text)} | {', '.join(found) or '-'} | "
             f"{_cell(final if final != url else 'same')} |"

@@ -20,6 +20,9 @@
 #                more as it finds them.
 #   status_hint  active | stale | possibly discontinued
 #   notes        anything else
+#   watch        false -> the page-watcher skips it (blocks bots / needs login);
+#                its known deadlines still show up
+#   watch_note   why it isn't watched
 #
 # Seeded 2026-11-24 via web search; the verify workflow loads each URL for real.
 # Login-only pages (e.g. the bsurp.stanford.edu project list) are deliberately
@@ -110,6 +113,8 @@ pages:
     class_years: []
     render: auto
     status_hint: active
+    watch: false
+    watch_note: biox.stanford.edu blocks automated requests (bot protection) - deadline entered by hand.
     deadlines:
       - {kind: application, date: 2027-01-12, label: "Application deadline (8:00am PST)"}
     notes: >-
@@ -164,13 +169,18 @@ pages:
   - id: chemh-undergrad-scholars
     name: Sarafan ChEM-H Undergraduate Scholars
     org: Sarafan ChEM-H
-    url: https://chemh.stanford.edu/training-education/undergraduate-programs/undergraduate-scholars-program
+    # The program's own page redirects to a Stanford login for automated
+    # requests, so we watch its public SOLO listing instead.
+    url: https://solo.stanford.edu/opportunities/stanford-chem-h-undergraduate-scholars-program
     type: research program
     fields: [biotech]
     class_years: [sophomore]
     render: auto
     status_hint: active
-    notes: Apply in fall of sophomore year - a target for next year.
+    notes: >-
+      Apply in fall of sophomore year (applications via chemh.slideroom.com) - a
+      target for next year. Runs winter through the following fall, 8-10 hrs/week
+      in a lab plus funded full-time summer research.
 
   - id: biobuds-research
     name: bioBUDS research opportunities
@@ -195,15 +205,15 @@ pages:
     notes: Spring 2026 edition (8 hrs/week x 10 weeks, $1,500) was due Feb 27; expect late Feb 2027.
 
   - id: eso-undergrad
-    name: Stanford Medicine Education & STEM Outreach - undergraduate programs
-    org: Stanford Medicine ESO
-    url: https://eso.stanford.edu/programs/undergraduate-students
+    name: Stanford Education & STEM Outreach - undergraduate programs
+    org: Stanford Education & STEM Outreach
+    url: https://oso.stanford.edu/programs/undergraduate-students
     type: research program
     fields: [biotech]
     class_years: []
     render: auto
-    status_hint: stale
-    notes: Only 2024 dates were visible in search results - possibly stale.
+    status_hint: active
+    notes: The office moved from eso.stanford.edu (no longer resolves) to oso.stanford.edu. Lists SSRP-Amgen and other summer programs.
 
   # ---------------------------------------------------------------- econ ----
   - id: siepr-ugrf
@@ -231,7 +241,7 @@ pages:
   - id: king-center-summer-ra
     name: King Center summer full-time undergraduate research fellows
     org: Stanford King Center on Global Development
-    url: https://kingcenter.stanford.edu/opportunities/undergraduate-students/summer-undergraduate-full-time-research-assistant-program
+    url: https://kingcenter.stanford.edu/opportunities/undergraduate-students/summer-full-time-undergraduate-research-fellows-program
     type: RA
     fields: [econ]
     class_years: []
@@ -259,6 +269,8 @@ pages:
     class_years: [junior]
     render: auto
     status_hint: stale
+    watch: false
+    watch_note: Now redirects to a Stanford login page (checked 2026-11-24), so it is not fetched.
     notes: >-
       Stale: says the department Summer RA program was not offered in 2024, with
       no sign of it since. Watched in case it comes back (it preferred declared

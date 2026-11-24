@@ -105,6 +105,13 @@ def _window_extra(entry: dict, today: date) -> dict:
     return {"typical_open_month": int(month), "expected_open_start": start.isoformat(), "expected_open_end": end.isoformat()}
 
 
+def _watch_extra(entry: dict) -> dict:
+    """`watch: false` entries are skipped by the page-watcher (bot-blocked or login-only)."""
+    if entry.get("watch", True):
+        return {}
+    return {"watch": False, "watch_note": entry.get("watch_note", "")}
+
+
 @register("early_programs_registry")
 class EarlyProgramsRegistry(Source):
     def fetch(self) -> FetchResult:
@@ -141,6 +148,7 @@ def early_program_items(programs: list[dict], today: date) -> list[Item]:
                     "aka": entry.get("aka") or [],
                     "status_hint": entry.get("status_hint", ""),
                     "last_verified": str(entry.get("last_verified", "")),
+                    **_watch_extra(entry),
                     **_window_extra(entry, today),
                 },
             )
@@ -183,6 +191,7 @@ def watched_page_items(pages: list[dict], today: date) -> list[Item]:
                     "stale": stale,
                     "render": entry.get("render", "auto"),
                     "stanford": True,
+                    **_watch_extra(entry),
                     **_window_extra(entry, today),
                 },
             )

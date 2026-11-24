@@ -130,3 +130,18 @@ Human Performance URP (Jan 22, 2027), CS+Social Good fellowship (Feb 2, 2027), S
 |---|---|---|---|
 | gkarpe2204/student-opportunities | ✅ live — daily bot commits (last: yesterday 22:39 UTC) | `data/conferences.json` (also on its Pages site): `{updated, count:531, conferences:[{id,name,url,category,source,start,end,location,country,state,region,online,deadline,deadline_label,deadline_url,topics[],funding,notes,first_seen}]}`. Categories: academic 258 (CCF paper deadlines — mostly PhD-level), hackathon 120 (MLH + Devpost), industry 117, tech/business/premed/student ~36 | Its hand-curated `data/watchlist.yml` is a good seed for our registry. Notes **Grace Hopper 2026 was cancelled** (confirmed by press: cancelled 2 weeks out over a funding shortfall; 2027 not announced). |
 | Jose-Gael-Cruz-Lopez/BadgeUp | ⚠️ **STALE** — last commit Aug 8, 2026 (108 days) | No data file: hand-edited README markdown tables (106 rows: Status, Conference, Focus, Dates & Location, Access, Audience, Register, Deadline); statuses are outdated (still lists GHC 2026 as "OPEN") | Use it once as a **seed** for config/conferences.yaml (it's a good curated undergrad list across majors), plus a weekly low-priority README parse flagged "stale source". Replacement for freshness: our own registry + page-watcher. |
+
+## Live check from GitHub Actions (2026-11-24, first *Verify sources* run)
+
+All five sources worked from GitHub's network: Simplify (4,311 active listings),
+zshah101's Pages API (1,222), **Jobs Every Hour (300 newest of 5,749; its real format
+matched the parser)**, and both registries. Of the 73 registry URLs:
+
+| Problem | Entries | What we did |
+|---|---|---|
+| Wrong / moved URL | Morgan Stanley (2), JPMorganChase Fellowship, Capital One Summits (`campus.capitalone.com` no longer resolves), Stanford ESO (`eso.stanford.edu` → `oso.stanford.edu`), King Center, Deloitte | URLs corrected |
+| Redirects to a Stanford login | Econ dept undergrad research page, ChemH Undergraduate Scholars | Econ page: `watch: false`; ChemH: watch its public SOLO listing instead |
+| Bot protection blocks GitHub's servers | Citadel + Citadel Securities (4), Bio-X USRP, HRT (HTTP 403) | `watch: false` (deadlines kept by hand; Citadel/HRT postings come from Simplify/zshah101 and HRT's Greenhouse board) |
+| Timed out | CURIS (3 pages: connection timeout), McKinsey | Re-checked by the weekly verify run; handled when the page-watcher lands (Phase 4) |
+| Consistent with "possibly discontinued" | Goldman Virtual Insight (404), Google STEP + Meta University (empty JavaScript shells) | Already marked |
+| No 2026/2027 mention (evergreen pages) | SEO, ColorStack, Code2040, O4U, IMC Launchpad, CDDRL, HAI, VPUE departmental list, CS research page | Fine for now; the page-watcher will flag real changes |

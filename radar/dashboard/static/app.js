@@ -260,6 +260,7 @@ function card(it) {
   if (isNew(it, 24)) chips.push(el("span", { class: "chip new", text: "new" }));
   else if (isNew(it, 24 * 7)) chips.push(el("span", { class: "chip new", text: "this week" }));
   if (it.extra.stale) chips.push(el("span", { class: "chip warn", text: "page may be stale" }));
+  if (it.extra.watch === false) chips.push(el("span", { class: "chip", title: it.extra.watch_note || "", text: "not auto-checked" }));
 
   const meta = [];
   it.fields.forEach((f) => meta.push(el("span", { class: "chip field", text: f })));
