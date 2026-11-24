@@ -1,0 +1,255 @@
+# =============================================================================
+# Companies polled directly through their public job-board (ATS) APIs
+# =============================================================================
+# Only list companies that the GitHub sources DON'T already cover. (A test checks
+# the biotech list against vinaynarahari/Summer2027-Biotech-Internships'
+# companies.json so we never poll the same board twice.)
+#
+# Fields:
+#   name     company name as shown on the dashboard
+#   ats      greenhouse | lever | ashby | workday | oracle | unknown
+#            greenhouse / lever / ashby  -> slug   (boards-api.greenhouse.io/v1/boards/<slug>)
+#            workday -> tenant, host (wd1, wd5, ...), site, optional domain
+#                       (default myworkdayjobs.com; the Fed Board uses myworkdayjobsgov.com)
+#            oracle  -> host, site     (Oracle Recruiting Cloud "CX" sites)
+#            unknown -> not polled yet; listed so we remember to find its ATS
+#   group    which part of the spec it serves: biotech | econ | early-career
+#   fields   any of: cs, econ, biotech
+#   search   keywords used to filter titles (Workday/Oracle send them as the search
+#            text; others filter locally). Default: [intern]
+#   early_career_only  true -> keep only postings matching early-career keywords
+#   enabled  false -> skip (keeps the entry for reference)
+#   notes    why it's here / anything odd
+#
+# WORKDAY WARNING: Workday's Cloudflare blocks *heavy* pollers from GitHub Actions
+# (another bot polling ~2,000 tenants is now blocked on almost all of them; one
+# polling ~50 is fine). Keep the Workday list short. SimplifyJobs is the backstop.
+# ATS details verified 2026-11-24 from zshah101's company registry + its fetch
+# health log (which shows which boards work from GitHub Actions) and web search.
+# =============================================================================
+
+companies:
+
+  # -------------------------------------------------------------- biotech ----
+  # Bay Area biotech NOT covered by the biotech repo. (Genentech, Gilead,
+  # Illumina, Arc Institute, Recursion and insitro already are.)
+  - name: CZ Biohub
+    ats: greenhouse
+    slug: biohub
+    group: biotech
+    fields: [biotech]
+    notes: Chan Zuckerberg Biohub (SF / Stanford / Chicago). Board healthy from Actions.
+
+  - name: Chan Zuckerberg Initiative
+    ats: greenhouse
+    slug: chanzuckerberginitiative
+    group: biotech
+    fields: [biotech, cs]
+
+  - name: GRAIL
+    ats: lever
+    slug: grailbio
+    group: biotech
+    fields: [biotech]
+
+  - name: Genesis Molecular AI
+    ats: ashby
+    slug: genesis-molecular-ai
+    group: biotech
+    fields: [biotech, cs]
+    notes: Formerly Genesis Therapeutics (old Ashby slug genesis-therapeutics now 404s).
+
+  - name: Exelixis
+    ats: workday
+    tenant: exelixis
+    host: wd1
+    site: exel
+    group: biotech
+    fields: [biotech]
+    notes: Workday - best effort (was bot-blocked for a heavy poller).
+
+  - name: 10x Genomics
+    ats: unknown
+    group: biotech
+    fields: [biotech]
+    enabled: false
+    notes: Greenhouse board "10xgenomics" now returns 404 - they moved ATS. Re-discover.
+
+  # ATS still to discover (Phase 2 tries common slugs automatically):
+  - {name: Guardant Health, ats: unknown, group: biotech, fields: [biotech], enabled: false}
+  - {name: Denali Therapeutics, ats: unknown, group: biotech, fields: [biotech], enabled: false}
+  - {name: Calico Life Sciences, ats: unknown, group: biotech, fields: [biotech], enabled: false}
+  - {name: Verily, ats: unknown, group: biotech, fields: [biotech, cs], enabled: false}
+  - {name: Cytokinetics, ats: unknown, group: biotech, fields: [biotech], enabled: false}
+  - {name: Bio-Rad Laboratories, ats: unknown, group: biotech, fields: [biotech], enabled: false}
+  - {name: Vir Biotechnology, ats: unknown, group: biotech, fields: [biotech], enabled: false}
+  - {name: Allogene Therapeutics, ats: unknown, group: biotech, fields: [biotech], enabled: false}
+  - {name: Nkarta, ats: unknown, group: biotech, fields: [biotech], enabled: false}
+  - {name: Caribou Biosciences, ats: unknown, group: biotech, fields: [biotech], enabled: false}
+  - {name: Mammoth Biosciences, ats: unknown, group: biotech, fields: [biotech], enabled: false}
+  - {name: Scribe Therapeutics, ats: unknown, group: biotech, fields: [biotech], enabled: false}
+  - {name: EvolutionaryScale, ats: unknown, group: biotech, fields: [biotech, cs], enabled: false}
+  - {name: Atomwise, ats: unknown, group: biotech, fields: [biotech, cs], enabled: false}
+
+  # ----------------------------------------------------------------- econ ----
+  - name: Federal Reserve Banks (incl. SF Fed)
+    ats: workday
+    tenant: rb
+    host: wd5
+    site: FRS
+    group: econ
+    fields: [econ]
+    search: [intern, research assistant]
+    notes: >-
+      All 12 regional banks share this board; the bank is in the title prefix
+      (e.g. "SF Fed"). Workday - best effort; Simplify lists many Fed roles too.
+
+  - name: Federal Reserve Board of Governors
+    ats: workday
+    tenant: bd
+    host: wd104
+    site: frb
+    domain: myworkdayjobsgov.com
+    group: econ
+    fields: [econ]
+    search: [intern, research assistant]
+    notes: Workday Government Cloud (not the shared Reserve Bank board). Internships are US-citizens-only.
+
+  - name: The Brattle Group
+    ats: greenhouse
+    slug: thebrattlegroup
+    group: econ
+    fields: [econ]
+    notes: Has a Summer 2027 Research Analyst Intern posting.
+
+  - name: Charles River Associates
+    ats: greenhouse
+    slug: charlesriverassociates
+    group: econ
+    fields: [econ]
+
+  - name: Cornerstone Research
+    ats: workday
+    tenant: cornerstone
+    host: wd501
+    site: CornerstoneResearch_Careers
+    group: econ
+    fields: [econ]
+
+  - name: Compass Lexecon
+    ats: workday
+    tenant: fticonsulting
+    host: wd108
+    site: CompassLexeconCareers
+    group: econ
+    fields: [econ]
+    search: [intern, analyst]
+
+  - name: NERA Economic Consulting
+    ats: workday
+    tenant: mmc
+    host: wd1
+    site: MMC
+    group: econ
+    fields: [econ]
+    search: [NERA intern, NERA research]
+    notes: Parent Marsh McLennan's board; site name inferred - verify.
+
+  - name: Urban Institute
+    ats: workday
+    tenant: urban
+    host: wd1
+    site: Urban-Careers
+    group: econ
+    fields: [econ]
+    notes: Newest posting seen on wd115 - may be migrating; verify checks both.
+
+  - name: RAND Corporation
+    ats: workday
+    tenant: rand
+    host: wd5
+    site: External_Career_Site
+    group: econ
+    fields: [econ]
+
+  - name: Pew Research Center
+    ats: workday
+    tenant: pewtrusts
+    host: wd5
+    site: CenterExternal
+    group: econ
+    fields: [econ]
+
+  # No public API -> watched as pages instead (Phase 3): Analysis Group (iCIMS),
+  # Brookings (iCIMS), Bates White (viRecruit), Edgeworth (Paylocity), Mathematica.
+
+  # --------------------------------------------- early-career (Phase 5) ----
+  - name: Citi
+    ats: workday
+    tenant: citi
+    host: wd5
+    site: Citi_Early_Careers_Events_Site
+    group: early-career
+    fields: [econ]
+    search: [""]
+    notes: Citi's dedicated early-careers events board - every posting is relevant.
+
+  - name: Capital One
+    ats: workday
+    tenant: capitalone
+    host: wd12
+    site: Capital_One
+    group: early-career
+    fields: [cs, econ]
+    early_career_only: true
+
+  - name: BlackRock
+    ats: workday
+    tenant: blackrock
+    host: wd1
+    site: BlackRock_Early_Careers_Program
+    group: early-career
+    fields: [econ]
+    search: [""]
+
+  - name: NVIDIA
+    ats: workday
+    tenant: nvidia
+    host: wd5
+    site: NVIDIAExternalCareerSite
+    group: early-career
+    fields: [cs]
+    early_career_only: true
+
+  - name: JPMorganChase
+    ats: oracle
+    host: jpmc.fa.oraclecloud.com
+    site: CX_1001
+    group: early-career
+    fields: [econ, cs]
+    early_career_only: true
+
+  - name: Goldman Sachs
+    ats: oracle
+    host: hdpc.fa.us2.oraclecloud.com
+    site: CampusHiring
+    group: early-career
+    fields: [econ, cs]
+    early_career_only: true
+
+  - {name: Jane Street, ats: greenhouse, slug: janestreet, group: early-career, fields: [cs, econ], early_career_only: true}
+  - {name: Hudson River Trading, ats: greenhouse, slug: wehrtyou, group: early-career, fields: [cs, econ], early_career_only: true}
+  - {name: IMC Trading, ats: greenhouse, slug: imc, group: early-career, fields: [cs, econ], early_career_only: true}
+  - {name: Optiver, ats: greenhouse, slug: optiverprivate, group: early-career, fields: [cs, econ], early_career_only: true}
+  - {name: DRW, ats: greenhouse, slug: drwuniversityjobs, group: early-career, fields: [cs, econ], early_career_only: true}
+  - {name: Five Rings, ats: greenhouse, slug: fiveringsllc, group: early-career, fields: [cs, econ], early_career_only: true}
+  - {name: Akuna Capital, ats: greenhouse, slug: akunacapital, group: early-career, fields: [cs, econ], early_career_only: true}
+  - {name: Jump Trading, ats: greenhouse, slug: jumptrading, group: early-career, fields: [cs, econ], early_career_only: true}
+  - {name: Tower Research Capital, ats: greenhouse, slug: towerresearchcapital, group: early-career, fields: [cs, econ], early_career_only: true}
+  - {name: Point72, ats: greenhouse, slug: point72, group: early-career, fields: [econ], early_career_only: true}
+  - {name: Old Mission Capital, ats: ashby, slug: old-mission-capital, group: early-career, fields: [cs, econ], early_career_only: true, notes: "Greenhouse board oldmissioncapital 404s; Ashby works."}
+
+  # No public API -> program pages are watched via early_programs.yaml instead:
+  # Bank of America + Morgan Stanley campus (Oleeo tal.net), Deloitte / Bain /
+  # McKinsey (Avature), BCG / Microsoft / Capital One summits (Eightfold),
+  # Google (own system), Citadel (own site).

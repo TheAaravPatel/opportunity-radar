@@ -1,0 +1,93 @@
+{# Daily digest email. Inline styles only - most email apps ignore <style>. #}
+{% set muted = "color:#5b6675;" %}
+{% macro opp(i, extra="") -%}
+<a href="{{ i.url }}" style="color:#0b5cad;text-decoration:none;font-weight:600;">{{ i.title }}</a>
+<span style="{{ muted }}"> - {{ i.org }}{% if i.location %} · {{ i.location }}{% endif %}{{ extra }}</span>
+{%- endmacro %}
+{% macro when(days) -%}
+{% if days == 0 %}today{% elif days == 1 %}tomorrow{% else %}in {{ days }} days{% endif %}
+{%- endmacro %}
+<!doctype html>
+<html><body style="margin:0;background:#f6f7f9;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#17202b;">
+<div style="max-width:640px;margin:0 auto;padding:16px;">
+  <h1 style="color:#8c1515;font-size:22px;margin:0 0 4px;">Opportunity Radar</h1>
+  <p style="{{ muted }}margin:0 0 16px;">{{ d.today.strftime("%A, %B %-d") }} ·
+    <a href="{{ dashboard_url }}" style="color:#0b5cad;">open the dashboard</a></p>
+
+  {% if d.first_digest %}
+  <div style="background:#fff;border:1px solid #d9dee6;border-radius:10px;padding:12px;margin-bottom:14px;">
+    <b>Welcome!</b> This is your first digest. The radar is tracking {{ d.totals.tracked }} opportunities
+    ({{ d.totals.open }} open). From now on each email lists only what's new since the previous one.
+  </div>
+  {% endif %}
+
+  {# 1. Deadlines #}
+  <h2 style="font-size:17px;margin:18px 0 6px;">Deadlines in the next 14 days</h2>
+  {% if d.deadlines %}
+  <table style="width:100%;border-collapse:collapse;font-size:14px;">
+    {% for x in d.deadlines %}
+    <tr style="border-bottom:1px solid #e6e9ee;">
+      <td style="padding:6px 8px 6px 0;white-space:nowrap;vertical-align:top;{% if x.days <= 7 %}color:#b42318;font-weight:700;{% endif %}">
+        {{ x.date[5:] | replace("-", "/") }}<br><span style="font-size:12px;font-weight:400;">{{ when(x.days) }}</span></td>
+      <td style="padding:6px 0;vertical-align:top;">
+        {% if x.reminder %}<span style="background:#8c1515;color:#fff;border-radius:999px;padding:1px 7px;font-size:11px;">{{ x.days }}-day reminder</span> {% endif %}
+        {{ "Opens" if x.kind == "opens" else x.kind | capitalize }}: {{ opp(x) }}
+        {% if x.label %}<div style="{{ muted }}font-size:12px;">{{ x.label }}{% if x.approx %} (approximate){% endif %}</div>{% endif %}
+        {% if not x.eligible %}<div style="color:#9a6700;font-size:12px;">Not open to your class year - shown for planning</div>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}<p style="{{ muted }}">Nothing due in the next two weeks.</p>{% endif %}
+
+  {# 2. Early programs #}
+  <h2 style="font-size:17px;margin:18px 0 6px;">Early programs this week</h2>
+  {% if d.early_opening or d.early_closing or d.early_warnings or d.new_early_postings %}
+    {% for x in d.early_opening %}<p style="margin:4px 0;">🟢 <b>Opens {{ when(x.days) }}:</b> {{ opp(x) }}</p>{% endfor %}
+    {% for x in d.early_closing %}<p style="margin:4px 0;">⏳ <b>Closes {{ when(x.days) }}:</b> {{ opp(x) }}</p>{% endfor %}
+    {% for x in d.early_warnings %}<p style="margin:4px 0;">🔔 <b>Usually opens in {{ x.opens_month }}</b> (about 2 weeks): {{ opp(x) }} - get your resume ready.</p>{% endfor %}
+    {% for x in d.new_early_postings %}<p style="margin:4px 0;">✨ <b>New early-career posting:</b> {{ opp(x) }}</p>{% endfor %}
+  {% else %}<p style="{{ muted }}">No early programs opening or closing this week.</p>{% endif %}
+
+  {# 3. New by field #}
+  <h2 style="font-size:17px;margin:18px 0 6px;">New since the last digest</h2>
+  {% if d.new_counts %}
+    {% for f in fields if d.new_by_field.get(f) %}
+    <h3 style="font-size:14px;margin:12px 0 4px;color:#8c1515;">{{ field_labels[f] }} · {{ d.new_counts[f] }} new</h3>
+    {% for i in d.new_by_field[f] %}
+      <p style="margin:3px 0;font-size:14px;">{{ opp(i, " · fit " ~ i.score) }}</p>
+    {% endfor %}
+    {% if d.new_counts[f] > d.new_by_field[f] | length %}
+      <p style="{{ muted }}font-size:13px;margin:3px 0;">+ {{ d.new_counts[f] - d.new_by_field[f] | length }} more on the <a href="{{ dashboard_url }}" style="color:#0b5cad;">dashboard</a></p>
+    {% endif %}
+    {% endfor %}
+  {% else %}<p style="{{ muted }}">Nothing new.</p>{% endif %}
+
+  {# 4. Conferences #}
+  <h2 style="font-size:17px;margin:18px 0 6px;">New conferences, hackathons &amp; travel scholarships</h2>
+  {% if d.new_conferences %}
+    {% for i in d.new_conferences %}<p style="margin:3px 0;font-size:14px;">{{ opp(i, " · " ~ i.type) }}</p>{% endfor %}
+  {% else %}<p style="{{ muted }}">None new.</p>{% endif %}
+
+  {# 5. Pages #}
+  <h2 style="font-size:17px;margin:18px 0 6px;">Stanford pages that changed</h2>
+  {% if d.page_changes %}
+    {% for p in d.page_changes %}
+    <p style="margin:4px 0;"><a href="{{ p.url }}" style="color:#0b5cad;">{{ p.title or p.id }}</a></p>
+    {% if p.diff %}<pre style="white-space:pre-wrap;font-size:12px;background:#eef1f5;padding:8px;border-radius:6px;">{{ p.diff[:1500] }}</pre>{% endif %}
+    {% endfor %}
+  {% else %}<p style="{{ muted }}">No watched page changed.</p>{% endif %}
+
+  {# 6. Sources #}
+  <h2 style="font-size:17px;margin:18px 0 6px;">Sources that failed</h2>
+  {% if d.failed_sources %}
+    {% for s in d.failed_sources %}
+    <p style="margin:4px 0;font-size:14px;"><b>{{ s.name or s.id }}</b>{% if s.id in d.newly_failed %} <span style="color:#b42318;">(new)</span>{% endif %}
+      - failed {{ s.consecutive_failures }} time{{ "s" if s.consecutive_failures != 1 }} in a row<br>
+      <span style="{{ muted }}font-size:12px;">{{ s.last_error }}</span></p>
+    {% endfor %}
+  {% else %}<p style="{{ muted }}">All sources OK.</p>{% endif %}
+
+  <p style="{{ muted }}font-size:12px;margin-top:24px;">Sent by Opportunity Radar. Change what's in this email in config/settings.yaml (digest section).</p>
+</div>
+</body></html>

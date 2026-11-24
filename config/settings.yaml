@@ -1,0 +1,56 @@
+# =============================================================================
+# Global settings for Opportunity Radar
+# =============================================================================
+
+profile:
+  # Your expected graduation year. Class years are computed from this, so the
+  # tool automatically treats you as a sophomore next school year.
+  grad_year: 2030
+  school: Stanford
+  time_zone: America/Los_Angeles   # "today" and the digest use Pacific time
+
+dashboard:
+  title: Opportunity Radar
+  # Where GitHub Pages publishes the dashboard (used for links in the email).
+  url: https://theaaravpatel.github.io/opportunity-radar/
+  # Closed items stay visible (greyed out) for this many days.
+  keep_closed_days: 14
+  # Links shown in the Sources panel for things we deliberately don't automate.
+  manual_check_links:
+    - name: NBER research assistant positions (at NBER)
+      url: https://www.nber.org/career-resources/research-assistant-positions-nber
+      why: NBER's terms of use prohibit automated monitoring - check by hand.
+    - name: NBER research assistant positions (not at NBER)
+      url: https://www.nber.org/career-resources/research-assistant-positions-not-nber
+      why: NBER's terms of use prohibit automated monitoring - check by hand.
+
+digest:
+  enabled: true
+  deadline_window_days: 14        # "Deadlines in the next N days" section
+  reminder_days: [14, 7, 2]       # extra reminder on exactly these days before a deadline
+  expected_open_warning_days: 14  # "usually opens in 2 weeks" warning
+  max_new_per_field: 15           # list at most this many new items per field
+
+llm:
+  # Claude is only used for things keyword rules can't handle. Everything
+  # quietly turns off when ANTHROPIC_API_KEY isn't set.
+  enabled: true
+  model: claude-opus-5-5
+  refusal_fallback: true          # retry a (rare) declined request on a fallback model
+  classify_batch_size: 20         # titles per classification call
+  max_classify_calls_per_run: 3
+  max_extract_calls_per_run: 5
+
+discovery:
+  enabled: true                   # weekly web search for new sources (needs ANTHROPIC_API_KEY)
+  max_searches: 15
+
+http:
+  # Descriptive User-Agent so site owners know who we are (no personal info).
+  user_agent: "OpportunityRadar/0.1 (+https://github.com/TheAaravPatel/opportunity-radar; personal student project)"
+  timeout_seconds: 30
+  max_retries: 3
+  min_delay_seconds: 1.0          # minimum gap between two requests to the same host
+  per_host_delay_seconds:         # slower for hosts that rate-limit bots
+    myworkdayjobs.com: 3.0
+    myworkdayjobsgov.com: 3.0

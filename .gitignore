@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Generated files (the database lives on the `data` branch, the site on GitHub Pages)
+data/*.db
+data/*.db-journal
+site/
+out/

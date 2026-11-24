@@ -1,0 +1,201 @@
+# =============================================================================
+# Keyword rules: field classification, eligibility scoring, early-career detection
+# =============================================================================
+# Patterns are matched case-insensitively against whole words, so "ai" will not
+# match "maintain". Write plain words/phrases; regex is allowed for the
+# eligibility `pattern` entries (advanced).
+# =============================================================================
+
+# Which field(s) an item belongs to. A source can already imply a field (e.g.
+# the biotech repo -> biotech); these words can ADD fields (a "Bioinformatics
+# Intern" on Simplify becomes cs + biotech). Only items that match nothing at
+# all are sent to Claude.
+fields:
+  cs:
+    - software
+    - software engineer
+    - developer
+    - programming
+    - computer science
+    - computer engineering
+    - machine learning
+    - ml
+    - artificial intelligence
+    - ai
+    - deep learning
+    - data science
+    - data scientist
+    - data engineer
+    - data engineering
+    - data analyst
+    - data analytics
+    - analytics engineer
+    - backend
+    - frontend
+    - full stack
+    - fullstack
+    - devops
+    - cloud
+    - cybersecurity
+    - security engineer
+    - quantitative developer
+    - quant developer
+    - quantitative researcher
+    - quant
+    - algorithm
+    - algorithms
+    - robotics
+    - computational
+    - swe
+    - sre
+    - site reliability
+    - infrastructure engineer
+    - hackathon
+  econ:
+    - economics
+    - economist
+    - economic
+    - econometrics
+    - econometric
+    - finance
+    - financial
+    - investment banking
+    - banking
+    - equity research
+    - asset management
+    - wealth management
+    - private equity
+    - venture capital
+    - hedge fund
+    - consulting
+    - consultant
+    - management consulting
+    - public policy
+    - policy
+    - trading
+    - trader
+    - markets
+    - sales and trading
+    - accounting
+    - actuarial
+    - federal reserve
+    - research assistant economics
+    - predoctoral
+    - predoc
+  biotech:
+    - biology
+    - biological
+    - biotech
+    - biotechnology
+    - bioinformatics
+    - computational biology
+    - life science
+    - life sciences
+    - genomics
+    - genetics
+    - genome
+    - protein
+    - proteomics
+    - molecular
+    - cell biology
+    - biochemistry
+    - chemistry
+    - pharma
+    - pharmaceutical
+    - drug discovery
+    - drug development
+    - clinical
+    - clinical research
+    - therapeutics
+    - immunology
+    - neuroscience
+    - biomedical
+    - bioengineering
+    - microbiology
+    - sequencing
+    - crispr
+    - assay
+    - medical affairs
+    - regulatory affairs
+
+# Eligibility scoring. Every item starts at `base` points; matching rules add
+# or subtract points and the reason is shown on the dashboard. Class-year and
+# graduation-year logic is computed in radar/eligibility.py from your
+# grad_year (settings.yaml), so it adjusts automatically each school year.
+eligibility:
+  base: 50
+  no_class_year_bonus: 10        # nothing says who can apply -> probably open
+  your_year_bonus: 30            # explicitly open to your current class year
+  next_year_bonus: 5             # open to next year's class (plan ahead)
+  other_years_penalty: -25       # only for class years other than yours
+  grad_window_bonus: 25          # graduation window includes your year
+  grad_too_early_penalty: -30    # must graduate before you will
+  rules:
+    - pattern: '\ball (undergraduate|undergrad|class) (students|years)\b|\bany (class )?year\b|\ball years\b|\ball undergraduates\b|\bopen to all (stanford )?undergrad'
+      points: 15
+      reason: Open to all undergraduates
+    - pattern: '\b(ph\.?\s?d|doctoral|postdoc|post-doc|postdoctoral)\b'
+      points: -30
+      reason: PhD-level role
+    - pattern: "\\b(master'?s|mba|m\\.s\\.|ms student|graduate students?|grad students?)\\b"
+      points: -25
+      reason: For graduate students
+    - pattern: '\b(non-stanford|other (universities|institutions|schools)|outside (of )?stanford|not (currently )?(enrolled|attending) (at )?stanford)\b'
+      points: -40
+      reason: For non-Stanford students only
+    - pattern: '\bstanford (students|undergraduates|undergrads)\b'
+      points: 5
+      reason: For Stanford students
+    - pattern: '\b(new grad|new graduate|entry[- ]level|full[- ]time (role|position))\b'
+      points: -20
+      reason: Full-time / new-grad role, not an internship
+
+# Words that mark a posting as an early-career (freshman/sophomore) program.
+# Used to flag postings in every job feed and match them to the registry.
+#   strong: count on their own ("Sophomore Summer Analyst", "Early Insights")
+#   weak:   too common alone ("Market Research Insights Intern" isn't a program),
+#           so they only count when the title also has a program word
+#           ("Insight Day", "Discovery Program", "Explore Series") or a strong word.
+early_career:
+  strong:
+    - sophomore
+    - sophomores
+    - freshman
+    - freshmen
+    - first-year
+    - first year
+    - second-year
+    - second year
+    - underclassmen
+    - underclassman
+    - pre-internship
+    - early insights
+    - early insight
+    - early identification
+    - early id
+    - graduating 2029
+    - graduating 2030
+    - class of 2029
+    - class of 2030
+  weak:
+    - insight
+    - insights
+    - discovery
+    - discover
+    - explore
+    - immersion
+    - summit
+    - academy
+    - kickstart
+    - fellowship
+  program_words:
+    - program
+    - programme
+    - day
+    - days
+    - series
+    - event
+    - week
+    - forum
+    - experience
+    - conference

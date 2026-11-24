@@ -1,0 +1,61 @@
+# Every 6 hours: read the job/internship feeds, rebuild the dashboard.
+name: Job feeds (every 6 hours)
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"     # 00:17, 06:17, 12:17, 18:17 UTC
+  workflow_dispatch: {}          # "Run workflow" button in the Actions tab
+
+permissions:
+  contents: write                # push the database to the data branch
+  pages: write                   # publish the dashboard
+  id-token: write
+
+# All workflows that write the database share this group, so they never run
+# at the same time and overwrite each other's changes.
+concurrency:
+  group: radar-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Load database from the data branch
+        run: bash scripts/load-db.sh
+      - name: Fetch job feeds
+        run: python -m radar fetch --group jobs
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          USAJOBS_API_KEY: ${{ secrets.USAJOBS_API_KEY }}
+          USAJOBS_EMAIL: ${{ secrets.USAJOBS_EMAIL }}
+      - name: Build dashboard
+        run: python -m radar dashboard
+      - name: Save database to the data branch
+        run: bash scripts/save-db.sh
+      - name: Back up database
+        uses: actions/upload-artifact@v4
+        with:
+          name: radar-db
+          path: data/radar.db
+          retention-days: 14
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: update
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,351 @@
+# =============================================================================
+# Watched Stanford pages  (spec Section 2)
+# =============================================================================
+# Pages that post once or a few times a year and are deadline-driven. The shared
+# page-watcher checks each one daily: it stores a text snapshot, saves a readable
+# diff when the page changes, and pulls out deadlines.
+#
+# Fields (only id, name, url are required):
+#   id           unique slug; don't change it later
+#   name         program / page name shown on the dashboard
+#   org          office or department running it
+#   url          the exact page to watch. Prefer pages whose address stays the
+#                same every year (application pages often move: usrp2026 -> usrp2027)
+#   type         research program | fellowship | RA | grant
+#   fields       any of: cs, econ, biotech
+#   class_years  who can apply (your CURRENT year when applying); [] = no limit found
+#   render       auto (default: try a plain request, use a browser if the page is
+#                empty) | http | playwright (always use a headless browser)
+#   deadlines    known deadlines: {kind, date, label, approx}. The watcher adds
+#                more as it finds them.
+#   status_hint  active | stale | possibly discontinued
+#   notes        anything else
+#
+# Seeded 2026-11-24 via web search; the verify workflow loads each URL for real.
+# Login-only pages (e.g. the bsurp.stanford.edu project list) are deliberately
+# NOT listed - we never fetch anything behind Stanford login.
+# =============================================================================
+
+pages:
+
+  # ------------------------------------------------------------------ CS ----
+  - id: curis
+    name: CURIS summer research
+    org: Stanford Computer Science
+    url: https://curis.stanford.edu/
+    type: research program
+    fields: [cs]
+    class_years: []
+    render: auto
+    status_hint: active
+    notes: >-
+      Project list usually updated near the end of January; 2026 student
+      applications ran Jan 27-Feb 10. 2027 dates not posted yet.
+      /summer/ and /applications/ are a JavaScript app (needs a browser).
+
+  - id: curis-summer-projects
+    name: CURIS summer project list
+    org: Stanford Computer Science
+    url: https://curis.stanford.edu/summer/
+    type: research program
+    fields: [cs]
+    class_years: []
+    render: playwright
+    status_hint: active
+
+  - id: curis-pure
+    name: CURIS PURE (paid research during the school year)
+    org: Stanford Computer Science
+    url: https://curis.stanford.edu/pure_student/
+    type: research program
+    fields: [cs]
+    class_years: []
+    render: auto
+    status_hint: active
+    deadlines:
+      - {kind: application, date: 2027-01-08, label: PURE deadline (winter)}
+      - {kind: application, date: 2027-04-02, label: PURE deadline (spring)}
+
+  - id: cs-research-for-undergrads
+    name: CS undergraduate research opportunities
+    org: Stanford Computer Science
+    url: https://www.cs.stanford.edu/bachelors/research-opportunities
+    type: research program
+    fields: [cs]
+    class_years: []
+    render: auto
+    status_hint: active
+
+  - id: cs-social-good-fellowship
+    name: CS+Social Good Fellowship
+    org: CS+Social Good / Haas Center
+    url: https://solo.stanford.edu/programs/cssocial-good-fellowship
+    type: fellowship
+    fields: [cs]
+    class_years: []
+    render: auto
+    status_hint: active
+    deadlines:
+      - {kind: application, date: 2027-02-02, label: Application deadline}
+    notes: $7,500 summer fellowship.
+
+  - id: datasurf
+    name: DataSURF (data science summer research)
+    org: Stanford Statistics
+    url: https://statistics.stanford.edu/academic-programs/undergraduate-programs/data-science-undergraduate-research-focus-datasurf
+    type: research program
+    fields: [cs, econ]
+    class_years: []
+    render: auto
+    status_hint: active
+    notes: $8,500 + $1,500. 2026 deadline was Feb 8; no 2027 date yet.
+
+  # ------------------------------------------------------------- biotech ----
+  - id: biox-usrp
+    name: Bio-X Undergraduate Summer Research Program (USRP)
+    org: Stanford Bio-X
+    url: https://biox.stanford.edu/research/undergraduate-research
+    type: research program
+    fields: [biotech]
+    class_years: []
+    render: auto
+    status_hint: active
+    deadlines:
+      - {kind: application, date: 2027-01-12, label: "Application deadline (8:00am PST)"}
+    notes: >-
+      10 weeks in person; your faculty mentor must be Bio-X affiliated and must
+      submit a confirmation form within 3 days of your application. The yearly
+      application page moves (usrp2026 -> usrp2027), so we watch this stable page.
+
+  - id: bsurp
+    name: Biology Summer Undergraduate Research Program (BSURP)
+    org: Stanford Biology
+    url: https://biology.stanford.edu/academics/undergraduate-program/doing-research/biology-summer-undergraduate-research-program-bsurp
+    type: research program
+    fields: [biotech]
+    class_years: [freshman, sophomore]
+    render: auto
+    status_hint: active
+    deadlines:
+      - {kind: application, date: 2027-01-25, label: "Application deadline (11:59pm PST)"}
+    notes: >-
+      Priority to 1st- and 2nd-year students. Runs late June-late August 2027;
+      offers accepted by mid-March. The bsurp.stanford.edu project list needs
+      Stanford login, so only this public page is watched.
+
+  - id: ssrp-amgen
+    name: SSRP-Amgen Scholars Program
+    org: Stanford Biosciences
+    url: https://biosciences.stanford.edu/pathways/ssrp-amgen-scholars-program/
+    type: research program
+    fields: [biotech]
+    class_years: [sophomore, junior]
+    render: auto
+    status_hint: active
+    deadlines:
+      - {kind: application, date: 2027-02-01, label: Application deadline}
+    notes: >-
+      Jun 19-Aug 14, 2027. US citizens / permanent residents / DACA, sophomores
+      and up; recruits mainly from other universities.
+
+  - id: wu-tsai-hpa-urp
+    name: Wu Tsai Human Performance Alliance Undergraduate Research Program
+    org: Wu Tsai Human Performance Alliance
+    url: https://humanperformance.stanford.edu/education/undergraduate-research-program/
+    type: research program
+    fields: [biotech]
+    class_years: []
+    render: auto
+    status_hint: active
+    deadlines:
+      - {kind: application, date: 2027-01-22, label: Application deadline}
+    notes: 10 weeks, $7,500.
+
+  - id: chemh-undergrad-scholars
+    name: Sarafan ChEM-H Undergraduate Scholars
+    org: Sarafan ChEM-H
+    url: https://chemh.stanford.edu/training-education/undergraduate-programs/undergraduate-scholars-program
+    type: research program
+    fields: [biotech]
+    class_years: [sophomore]
+    render: auto
+    status_hint: active
+    notes: Apply in fall of sophomore year - a target for next year.
+
+  - id: biobuds-research
+    name: bioBUDS research opportunities
+    org: bioBUDS (student group)
+    url: https://biobuds.stanford.edu/resources/research-opportunities
+    type: research program
+    fields: [biotech]
+    class_years: []
+    render: auto
+    status_hint: stale
+    notes: Page may be out of date; most bioBUDS announcements go out on Slack.
+
+  - id: biobuds-internship
+    name: bioBUDS paid internship
+    org: bioBUDS (student group)
+    url: https://biobuds.stanford.edu/course-content/internship
+    type: research program
+    fields: [biotech]
+    class_years: []
+    render: auto
+    status_hint: active
+    notes: Spring 2026 edition (8 hrs/week x 10 weeks, $1,500) was due Feb 27; expect late Feb 2027.
+
+  - id: eso-undergrad
+    name: Stanford Medicine Education & STEM Outreach - undergraduate programs
+    org: Stanford Medicine ESO
+    url: https://eso.stanford.edu/programs/undergraduate-students
+    type: research program
+    fields: [biotech]
+    class_years: []
+    render: auto
+    status_hint: stale
+    notes: Only 2024 dates were visible in search results - possibly stale.
+
+  # ---------------------------------------------------------------- econ ----
+  - id: siepr-ugrf
+    name: SIEPR Undergraduate Research Fellows
+    org: SIEPR
+    url: https://siepr.stanford.edu/programs/undergraduate-student-opportunities/undergraduate-research-fellows-program
+    type: RA
+    fields: [econ]
+    class_years: []
+    render: auto
+    status_hint: active
+    notes: Applications reviewed as they arrive (rolling), with an interest list.
+
+  - id: siepr-ugrf-summer
+    name: SIEPR summer research fellows
+    org: SIEPR
+    url: https://siepr.stanford.edu/programs/undergraduate-student-opportunities/undergraduate-research-fellows-program/siepr-summer
+    type: RA
+    fields: [econ]
+    class_years: []
+    render: auto
+    status_hint: active
+    notes: 2026 edition Jun 22-Aug 28, $8,500 stipend, any major. No 2027 page yet.
+
+  - id: king-center-summer-ra
+    name: King Center summer full-time undergraduate research fellows
+    org: Stanford King Center on Global Development
+    url: https://kingcenter.stanford.edu/opportunities/undergraduate-students/summer-undergraduate-full-time-research-assistant-program
+    type: RA
+    fields: [econ]
+    class_years: []
+    render: auto
+    status_hint: active
+    notes: Development economics, often abroad. 2027 positions post in February 2027.
+
+  - id: cddrl-summer-ra
+    name: CDDRL summer undergraduate research assistants
+    org: CDDRL (Freeman Spogli Institute)
+    url: https://cddrl.fsi.stanford.edu/student-opportunities
+    type: RA
+    fields: [econ]
+    class_years: []
+    render: auto
+    status_hint: active
+    notes: 2026 deadline was Mar 13.
+
+  - id: econ-dept-research
+    name: Stanford Economics undergraduate research opportunities
+    org: Stanford Economics
+    url: https://economics.stanford.edu/undergraduate/undergraduate-research-opportunities
+    type: RA
+    fields: [econ]
+    class_years: [junior]
+    render: auto
+    status_hint: stale
+    notes: >-
+      Stale: says the department Summer RA program was not offered in 2024, with
+      no sign of it since. Watched in case it comes back (it preferred declared
+      junior majors).
+
+  # ------------------------------------------------------ all-university ----
+  - id: solo-opportunities
+    name: SOLO - Stanford opportunities database
+    org: Stanford
+    url: https://solo.stanford.edu/opportunities
+    type: fellowship
+    fields: [cs, econ, biotech]
+    class_years: []
+    render: auto
+    status_hint: active
+    notes: Stanford's central list of fellowships/research programs with per-listing deadlines.
+
+  - id: summer-fellows
+    name: Stanford Summer Fellows Program (SSFP)
+    org: Stanford
+    url: https://summerfellows.stanford.edu/
+    type: fellowship
+    fields: [cs, econ, biotech]
+    class_years: [freshman]
+    render: auto
+    status_hint: active
+    notes: For rising sophomores (= you). Fully funded + stipend. 2027 application "opens in winter"; 2026 priority deadline was Jan 23.
+
+  - id: vpue-departmental-programs
+    name: Departmental summer research programs (list)
+    org: Undergraduate Research (VPUE)
+    url: https://undergradresearch.stanford.edu/fund-your-project/explore-departmental-funding
+    type: research program
+    fields: [cs, econ, biotech]
+    class_years: []
+    render: auto
+    status_hint: active
+    notes: Basic stipend $8,500 + $1,500. Lists each department's own summer program and deadline.
+
+  - id: vpue-small-grant
+    name: Undergraduate Research Small Grant
+    org: Undergraduate Research (VPUE)
+    url: https://undergradresearch.stanford.edu/fund-your-project/explore-student-grants/small
+    type: grant
+    fields: [cs, econ, biotech]
+    class_years: []
+    render: auto
+    status_hint: active
+    deadlines:
+      - {kind: application, date: 2027-01-15, label: Small Grant deadline (winter)}
+      - {kind: application, date: 2027-04-09, label: Small Grant deadline (spring)}
+    notes: Up to $1,500.
+
+  - id: vpue-major-grant
+    name: Undergraduate Research Major Grant
+    org: Undergraduate Research (VPUE)
+    url: https://undergradresearch.stanford.edu/fund-your-project/explore-student-grants/major
+    type: grant
+    fields: [cs, econ, biotech]
+    class_years: [junior]
+    render: auto
+    status_hint: active
+    deadlines:
+      - {kind: opens, date: 2027-01-04, label: Major Grant opens}
+      - {kind: application, date: 2027-03-01, label: Major Grant deadline}
+    notes: Priority to juniors; mentor letter due Mar 8.
+
+  - id: vpue-chappell-lougee
+    name: Chappell Lougee Scholarship
+    org: Undergraduate Research (VPUE)
+    url: https://undergradresearch.stanford.edu/fund-your-project/explore-student-grants/chappell-lougee
+    type: grant
+    fields: [econ]
+    class_years: [sophomore]
+    render: auto
+    status_hint: active
+    deadlines:
+      - {kind: application, date: 2026-12-01, label: Chappell Lougee deadline (sophomores)}
+    notes: Sophomores only ($8,800 + need-based supplement) - plan for next year.
+
+  - id: hai-student-opportunities
+    name: HAI student opportunities
+    org: Stanford HAI
+    url: https://hai.stanford.edu/policy/student-opportunities
+    type: fellowship
+    fields: [cs]
+    class_years: []
+    render: auto
+    status_hint: active
+    notes: Tech Ethics & Policy fellowships and other HAI programs.

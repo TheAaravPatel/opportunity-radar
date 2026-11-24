@@ -1,0 +1,690 @@
+# =============================================================================
+# Early-career program registry  (spec Section 1B)
+# =============================================================================
+# Insight days, discovery programs, summits, fellowships and paid pre-internships
+# built for first- and second-year students, plus "pipeline" organizations that
+# place students with many employers.
+#
+# These programs get renamed or discontinued a lot, so NEVER delete an entry:
+# set `status_hint: possibly discontinued` (or `discontinued`) instead. That way
+# the history stays and the dashboard can tell you it's gone.
+#
+# Fields (only id, firm, program, url are required):
+#   id                  unique slug, lowercase-with-dashes. Don't change it later
+#                       (it links the entry to its history in the database).
+#   firm                organization that runs the program
+#   program             official program name (update if it gets renamed)
+#   aka                 other / former names (also used to match job postings)
+#   type                "early-career program" (default) or "pipeline program"
+#   fields              any of: cs, econ, biotech   (econ = econ / finance / consulting)
+#   class_years         who can apply, using your CURRENT year at application time:
+#                       freshman, sophomore, junior, senior. (A summer program for
+#                       "rising sophomores" is applied to as a freshman -> freshman.)
+#   format              insight day | summit | virtual series | paid summer |
+#                       fellowship | conference | membership
+#   location            where it happens ("virtual" if online)
+#   url                 official program page. The page-watcher checks it daily.
+#   typical_open_month  1-12: month applications usually open (estimates are fine).
+#                       Drives the "expected soon" status and the digest's
+#                       "usually opens in 2 weeks" warning.
+#   status_hint         active | renamed | possibly discontinued | discontinued
+#   deadlines           list of {kind, date, label, approx}
+#                       kind: opens | application | priority | event
+#                       approx: true when the date is an estimate
+#   notes               anything else worth knowing
+#   last_verified       when/how this entry was last checked
+#
+# Seeded 2026-11-24 from web research (official pages + student trackers such as
+# Extern/Prospect Rock). "verified-search" = confirmed via search results, not by
+# loading the page; the verify workflow loads every URL for real.
+# =============================================================================
+
+programs:
+
+  # ---------------------------------------------------------------- banks ----
+  - id: bofa-student-leaders
+    firm: Bank of America
+    program: Student Leaders
+    fields: [econ]
+    class_years: [freshman]
+    format: paid summer
+    location: your local community + national leadership summit
+    url: https://about.bankofamerica.com/en/making-an-impact/student-leaders
+    typical_open_month: 12
+    status_hint: active
+    deadlines:
+      - {kind: opens, date: 2026-12-14, label: Applications open}
+      - {kind: application, date: 2027-02-15, label: Application deadline}
+    notes: >-
+      Repurposed from a high-school program: now for college students entering
+      their 2nd year in fall 2027 (i.e. current freshmen). 7-week paid nonprofit
+      internship + leadership summit. GPA 3.0+.
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: bofa-sophomore-insight
+    firm: Bank of America
+    program: Sophomore Summer Analyst / sophomore insight programs
+    aka: [Freshman/Sophomore Technology Insight, Sophomore Insight Forum]
+    fields: [econ, cs]
+    class_years: [sophomore]
+    format: paid summer
+    url: https://careers.bankofamerica.com/en-us/students
+    typical_open_month: 8
+    status_hint: possibly discontinued
+    notes: >-
+      No summer-2027 sophomore posting found as of Oct 2026; current Summer
+      Analyst postings require Nov 2027-Aug 2028 graduation (juniors). Campus
+      postings live on Oleeo (bankcampuscareers.tal.net) which has no public API,
+      so this page is watched instead.
+    last_verified: 2026-11-24 verified-search (Extern tracker)
+
+  - id: citi-freshman-discovery
+    firm: Citi
+    program: Freshman Discovery Program
+    fields: [econ]
+    class_years: [freshman]
+    format: virtual series
+    location: virtual (3 days in May)
+    url: https://jobs.citi.com/early-career-programs-pre-internships
+    typical_open_month: 3
+    status_hint: active
+    notes: >-
+      2026 cycle closed Apr 27, 2026 and ran May 19-21. Expect the 2027 posting
+      around late March. Citi also posts events on Workday site
+      Citi_Early_Careers_Events_Site (polled via companies.yaml).
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: citi-early-id
+    firm: Citi
+    program: Early ID Program
+    fields: [econ]
+    class_years: [sophomore]
+    format: virtual series
+    url: https://jobs.citi.com/early-career-programs-pre-internships
+    typical_open_month: 9
+    status_hint: active
+    notes: >-
+      Banking or Markets track, with Summer Analyst interview prep. Fall cohort
+      closed Oct 23, 2026; a spring cohort runs ~Feb.
+    last_verified: 2026-11-24 verified-search (Extern tracker)
+
+  - id: goldman-possibilities-series
+    firm: Goldman Sachs
+    program: Possibilities Series
+    fields: [econ]
+    class_years: [freshman]
+    format: virtual series
+    location: virtual
+    url: https://www.goldmansachs.com/careers/students/programs-and-internships/americas/possibilities-series
+    typical_open_month: 2
+    status_hint: active
+    notes: >-
+      First-years only. Last edition opened Feb 1, 2026 (for Dec 2028-May 2029
+      grads); the 2027 edition (Dec 2029-May 2030 grads = you) is expected ~Feb 2027.
+    last_verified: 2026-11-24 verified-search (official page + Extern)
+
+  - id: goldman-emerging-leaders
+    firm: Goldman Sachs
+    program: Emerging Leaders Series
+    aka: [Goldman Early Insights]
+    fields: [econ]
+    class_years: [sophomore]
+    format: virtual series
+    url: https://www.goldmansachs.com/careers/students/programs-and-internships/americas/emerging-leaders-series
+    typical_open_month: 8
+    status_hint: active
+    notes: Goldman's sophomore program (there is no Goldman "Early Insights"). Deadline was Oct 4, 2026.
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: goldman-virtual-insight
+    firm: Goldman Sachs
+    program: Undergraduate Virtual Insight Series
+    fields: [econ]
+    class_years: [freshman, sophomore]
+    format: virtual series
+    url: https://www.goldmansachs.com/careers/students/programs-and-internships/americas/undergrad-virtual-insight-series
+    status_hint: possibly discontinued
+    notes: Reported no longer listed as of Oct 2026 (Prospect Rock Partners).
+    last_verified: 2026-11-24 verified-search
+
+  - id: morgan-stanley-early-insights
+    firm: Morgan Stanley
+    program: Early Insights Program
+    fields: [econ]
+    class_years: [sophomore]
+    format: virtual series
+    url: https://www.morganstanley.com/careers/students-graduates
+    typical_open_month: 9
+    status_hint: active
+    notes: >-
+      US program is sophomore-only (Dec 2028-Jun 2029 grads). 2026 registration
+      ran Sep 18-Oct 30 with sessions Nov 2 & 5. Campus postings are on Oleeo
+      (morganstanley.tal.net) - no public API, so this page is watched.
+    last_verified: 2026-11-24 verified-search (tal.net posting + Harvard calendar)
+
+  - id: morgan-stanley-sophomore-analyst
+    firm: Morgan Stanley
+    program: Sophomore Summer Analyst Program (select divisions)
+    fields: [econ]
+    class_years: [sophomore]
+    format: paid summer
+    url: https://www.morganstanley.com/careers/students-graduates
+    typical_open_month: 8
+    status_hint: active
+    notes: >-
+      E.g. 2027 Investment Management Sophomore Summer Analyst (Private Credit &
+      Equity, NY), due Sep 25, 2026. The First Year Enhancement Program last ran
+      in early 2024 (possibly discontinued).
+    last_verified: 2026-11-24 verified-search
+
+  - id: jpmorganchase-fellowship
+    firm: JPMorganChase
+    program: JPMorganChase Fellowship Program
+    aka: [Advancing Black Pathways Fellowship, ABP Fellowship]
+    fields: [econ]
+    class_years: [sophomore]
+    format: paid summer
+    url: https://careers.jpmorgan.com/us/en/students/programs
+    typical_open_month: 11
+    status_hint: renamed
+    notes: >-
+      Formerly the Advancing Black Pathways Fellowship; now open to all
+      backgrounds. 5-week paid summer. Applications from ~Nov, deadline ~mid-Jan.
+      JPMorgan postings are on Oracle (polled via companies.yaml).
+    last_verified: 2026-11-24 verified-search (Opportunities for Youth)
+
+  - id: lazard-early-insights
+    firm: Lazard
+    program: Early Insights (US)
+    fields: [econ]
+    class_years: [sophomore]
+    format: insight day
+    url: https://www.lazard.com/careers/
+    typical_open_month: 1
+    status_hint: active
+    notes: Spring program, applications ~Jan 15-Feb 15 per third-party guides. Not verified for 2027.
+    last_verified: 2026-11-24 unverified (third-party only)
+
+  - id: evercore-sophomore
+    firm: Evercore
+    program: Sophomore Insight / Sophomore programs
+    fields: [econ]
+    class_years: [sophomore]
+    format: insight day
+    url: https://www.evercore.com/careers/
+    status_hint: active
+    notes: Application -> interview -> insight event. Not verified for 2027.
+    last_verified: 2026-11-24 unverified (third-party only)
+
+  - id: moelis-sophomore
+    firm: Moelis & Company
+    program: Sophomore program
+    fields: [econ]
+    class_years: [sophomore]
+    format: insight day
+    url: https://www.moelis.com/careers/
+    typical_open_month: 9
+    status_hint: active
+    notes: Last due Oct 31 per third-party guides. Not verified for 2027.
+    last_verified: 2026-11-24 unverified (third-party only)
+
+  # ------------------------------------------------------- tech and quant ----
+  - id: microsoft-explore
+    firm: Microsoft
+    program: Explore Microsoft
+    aka: [Microsoft Explore, Explore Program]
+    fields: [cs]
+    class_years: [freshman, sophomore]
+    format: paid summer
+    location: Redmond, WA (12 weeks)
+    url: https://careers.microsoft.com/v2/global/en/exploremicrosoft
+    typical_open_month: 10
+    status_hint: active
+    notes: >-
+      NOT discontinued. Separate first-year and second-year postings. 2nd-year
+      posting opened Oct 1, 2026 and closed within ~10 days. First-year posting
+      reportedly went up Nov 2, 2026 and re-opens the first week of each month
+      through Feb 2027 (unconfirmed). Postings are on Eightfold (no public API).
+    last_verified: 2026-11-24 verified-search (Extern tracker)
+
+  - id: nvidia-ignite
+    firm: NVIDIA
+    program: NVIDIA Ignite
+    fields: [cs]
+    class_years: [freshman, sophomore]
+    format: paid summer
+    location: Santa Clara, CA (12 weeks)
+    url: https://www.nvidia.com/en-us/about-nvidia/careers/university-recruiting/
+    typical_open_month: 10
+    status_hint: active
+    notes: Software and Hardware tracks. 2026 window was Oct 5-18; next ~early Oct 2027.
+    last_verified: 2026-11-24 verified-search (Extern tracker)
+
+  - id: google-step
+    firm: Google
+    program: STEP (Student Training in Engineering Program)
+    aka: [ASDI]
+    fields: [cs]
+    class_years: [freshman, sophomore]
+    format: paid summer
+    url: https://buildyourfuture.withgoogle.com/programs/step
+    typical_open_month: 10
+    status_hint: possibly discontinued
+    notes: No summer-2027 posting as of Nov 2, 2026; the STEP page redirects. Rumored rename "ASDI" not found.
+    last_verified: 2026-11-24 verified-search (Extern tracker)
+
+  - id: meta-university
+    firm: Meta
+    program: Meta University
+    fields: [cs]
+    class_years: [freshman, sophomore]
+    format: paid summer
+    url: https://www.metacareers.com/careerprograms/students
+    status_hint: discontinued
+    notes: Meta confirmed the final class in 2025 (Work Shift, Apr 30, 2025). Kept for history.
+    last_verified: 2026-11-24 verified-search
+
+  - id: discover-citadel
+    firm: Citadel
+    program: Discover Citadel
+    fields: [econ, cs]
+    class_years: [freshman, sophomore]
+    format: insight day
+    location: New York (2 days, early April 2027)
+    url: https://www.citadel.com/careers/programs-and-events/discover-citadel/
+    typical_open_month: 1
+    status_hint: active
+    deadlines:
+      - {kind: application, date: 2027-03-05, label: Application deadline}
+    notes: For undergrads graduating Dec 2028-Jun 2030 (includes freshmen).
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: discover-citadel-securities
+    firm: Citadel Securities
+    program: Discover Citadel Securities
+    fields: [econ, cs]
+    class_years: [freshman, sophomore]
+    format: insight day
+    location: New York (2 days, early April 2027)
+    url: https://www.citadelsecurities.com/careers/programs-and-events/discover-citadel-securities/
+    typical_open_month: 1
+    status_hint: active
+    deadlines:
+      - {kind: application, date: 2027-03-05, label: Application deadline}
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: citadel-securities-sophomore-quant
+    firm: Citadel Securities
+    program: Sophomore Quant Trading Program
+    fields: [econ, cs]
+    class_years: [sophomore]
+    format: insight day
+    location: Miami or New York (March 2027)
+    url: https://www.citadelsecurities.com/careers/programs-and-events/
+    typical_open_month: 11
+    status_hint: active
+    notes: Terms & conditions PDF for the 2026-2027 program is dated Nov 2026.
+    last_verified: 2026-11-24 verified-search
+
+  - id: citadel-launch
+    firm: Citadel
+    program: Citadel Launch (sophomore SWE internship)
+    fields: [cs]
+    class_years: [sophomore]
+    format: paid summer
+    url: https://www.citadel.com/careers/programs-and-events/
+    status_hint: possibly discontinued
+    notes: No 2027 posting visible as of Aug 2026 (PracHub).
+    last_verified: 2026-11-24 verified-search
+
+  - id: jane-street-fttp
+    firm: Jane Street
+    program: First Year Trading and Technology Program (FTTP)
+    aka: [FIRST, First Year Trading and Technology Program]
+    fields: [econ, cs]
+    class_years: [freshman]
+    format: insight day
+    location: New York / Hong Kong / London (travel covered), ~Mar 21-25, 2027
+    url: https://www.janestreet.com/join-jane-street/programs-and-events/fttp/
+    typical_open_month: 11
+    status_hint: active
+    deadlines:
+      - {kind: application, date: 2027-01-31, label: NYC / Hong Kong application deadline}
+      - {kind: application, date: 2027-01-03, label: London application deadline}
+    notes: The "FIRST" program in the spec is FTTP - no program called FIRST exists.
+    last_verified: 2026-11-24 verified-search (official page + Harvard calendar)
+
+  - id: jane-street-insight
+    firm: Jane Street
+    program: INSIGHT
+    fields: [econ, cs]
+    class_years: []
+    format: insight day
+    location: New York (Jan 4-9, 2027)
+    url: https://www.janestreet.com/join-jane-street/programs-and-events/insight/
+    typical_open_month: 9
+    status_hint: active
+    notes: >-
+      For women, transgender and gender-expansive students; class year not
+      published. 2027 applications closed Oct 25, 2026.
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: two-sigma-first-year
+    firm: Two Sigma
+    program: First-Year Software Engineering Internship
+    fields: [cs]
+    class_years: [freshman]
+    format: paid summer
+    url: https://careers.twosigma.com/
+    typical_open_month: 1
+    status_hint: active
+    notes: Last cycle opened Jan 28, 2026; 2027 not posted yet.
+    last_verified: 2026-11-24 verified-search (PracHub)
+
+  - id: inside-hrt
+    firm: Hudson River Trading
+    program: Inside HRT
+    fields: [cs, econ]
+    class_years: [freshman, sophomore]
+    format: insight day
+    location: New York (3 days in May)
+    url: https://www.hudsonrivertrading.com/student-opportunities/
+    typical_open_month: 2
+    status_hint: active
+    notes: 2026 ran May 18-20. HRT dropped its sophomore summer internship for 2027.
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: imc-launchpad
+    firm: IMC Trading
+    program: Launchpad
+    fields: [cs, econ]
+    class_years: [sophomore]
+    format: insight day
+    location: Chicago (2 days, January)
+    url: https://www.imc.com/us/careers/students-graduates/programs/launchpad
+    typical_open_month: 10
+    status_hint: active
+    notes: Accelerated internship interviews for attendees.
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: optiver-futurefocus
+    firm: Optiver
+    program: FutureFocus
+    fields: [cs, econ]
+    class_years: [sophomore]
+    format: insight day
+    location: Chicago (5 days)
+    url: https://www.optiver.com/join-us/students/programs/futurefocus/
+    typical_open_month: 10
+    status_hint: active
+    notes: 2027 Tech edition is for Winter 2028-Spring 2029 grads; closes ~Jan 2027 (estimate).
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: sig-discovery
+    firm: Susquehanna International Group (SIG)
+    program: Discovery programs
+    fields: [cs, econ]
+    class_years: [freshman, sophomore]
+    format: virtual series
+    url: https://careers.sig.com/discovery-programs/jobs
+    typical_open_month: 9
+    status_hint: active
+    notes: US Discovery programs (2026-27) closed Nov 16, 2026; a virtual first-year event runs Dec 2026 and May 2027.
+    last_verified: 2026-11-24 verified-search (job board copies)
+
+  - id: capital-one-summits
+    firm: Capital One
+    program: Summits (Tech / Analyst / Product / Finance)
+    fields: [cs, econ]
+    class_years: [freshman, sophomore]
+    format: summit
+    location: Capital One HQ (held Jan, May, Aug)
+    url: https://campus.capitalone.com/summits/
+    status_hint: active
+    notes: Invitation-only; interest forms. 5-day Tech Summit, 2-day Analyst/Product/Finance summits.
+    last_verified: 2026-11-24 verified-search
+
+  - id: capital-one-early-internship
+    firm: Capital One
+    program: Early Internship Program
+    fields: [cs, econ]
+    class_years: [sophomore]
+    format: paid summer
+    location: McLean, VA (10 weeks)
+    url: https://www.capitalonecareers.com/early-internships-program
+    typical_open_month: 8
+    status_hint: active
+    notes: Summer 2027 closed by Oct 25, 2026.
+    last_verified: 2026-11-24 verified-search
+
+  # ------------------------------------------------------------ consulting ---
+  - id: deloitte-discovery
+    firm: Deloitte
+    program: Discovery Internship
+    aka: [Discovery Intern (Freshman/Sophomore)]
+    fields: [econ]
+    class_years: [freshman, sophomore]
+    format: paid summer
+    url: https://apply.deloitte.com/careers/SearchJobs
+    typical_open_month: 12
+    status_hint: active
+    notes: >-
+      Postings are titled "Discovery Intern (Freshman/Sophomore) - <profile>"
+      (search that on the page). Summer 2028 postings expected late 2026-early
+      2027; timing sources conflict. Deloitte uses Avature (no public API).
+    last_verified: 2026-11-24 verified-search
+
+  - id: bain-bel
+    firm: Bain & Company
+    program: Building Entrepreneurial Leaders (BEL)
+    fields: [econ]
+    class_years: [sophomore]
+    format: insight day
+    location: in person (1.5 days, Feb 4-5, 2027)
+    url: https://www.bain.com/careers/work-with-us/internships-programs/building-entrepreneurial-leaders/
+    typical_open_month: 9
+    status_hint: active
+    notes: One application shared with CREW and First Forward. Current cycle closes Nov 30, 2026 (sophomores).
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: bcg-bridge-to-consulting
+    firm: Boston Consulting Group
+    program: Bridge to Consulting (freshman/sophomore)
+    fields: [econ]
+    class_years: [freshman, sophomore]
+    format: insight day
+    url: https://careers.bcg.com/global/en/on-campus
+    status_hint: possibly discontinued
+    notes: >-
+      Reportedly not run in 2026. "Bridge to BCG" is PhD/JD/MD only; BCG Advance
+      is now juniors only.
+    last_verified: 2026-11-24 verified-search
+
+  - id: mckinsey-sophomore-ba
+    firm: McKinsey & Company
+    program: Sophomore Summer Business Analyst
+    fields: [econ]
+    class_years: [sophomore]
+    format: paid summer
+    url: https://www.mckinsey.com/careers/students/sophomore-summer-business-analyst
+    typical_open_month: 1
+    status_hint: possibly discontinued
+    notes: Several sources say cancelled for the 2027 cycle, one says reinstated. Historically open Jan-Mar.
+    last_verified: 2026-11-24 verified-search
+
+  - id: cornerstone-first-year-foundations
+    firm: Cornerstone Research
+    program: First-Year Foundations
+    fields: [econ]
+    class_years: [freshman]
+    format: insight day
+    url: https://www.cornerstone.com/careers/analyst/
+    typical_open_month: 3
+    status_hint: active
+    deadlines:
+      - {kind: opens, date: 2027-03-01, label: 2027 applications open}
+    notes: Economic consulting. The analyst page says applications for 2027 programs open March 1, 2027.
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: cornerstone-sophomore-summit
+    firm: Cornerstone Research
+    program: Sophomore Summit
+    fields: [econ]
+    class_years: [sophomore]
+    format: summit
+    url: https://www.cornerstone.com/careers/analyst/
+    typical_open_month: 3
+    status_hint: active
+    deadlines:
+      - {kind: opens, date: 2027-03-01, label: 2027 applications open}
+    last_verified: 2026-11-24 verified-search (official page)
+
+  # Biotech/pharma freshman-sophomore programs are rare (Genentech needs one
+  # completed year; Pfizer Breakthrough is for rising seniors; Merck has no
+  # underclass track). The weekly discovery job searches for new ones. Stanford
+  # research programs (Bio-X, BSURP, SSRP-Amgen) live in watched_pages.yaml.
+
+  # ------------------------------------------------------- pipeline orgs ----
+  - id: seo-career
+    firm: SEO (Sponsors for Educational Opportunity)
+    program: SEO Career
+    type: pipeline program
+    fields: [econ, cs]
+    class_years: [freshman, sophomore, junior]
+    format: fellowship
+    url: https://career.seo-usa.org/apply-faq/
+    status_hint: active
+    notes: First-years may apply without a GPA. Rolling; the summer class usually closes mid-April.
+    last_verified: 2026-11-24 verified-search (official FAQ)
+
+  - id: seo-tech-developer-first-year
+    firm: SEO (Sponsors for Educational Opportunity)
+    program: SEO Tech Developer First Year Academy 2027
+    type: pipeline program
+    fields: [cs]
+    class_years: [freshman]
+    format: fellowship
+    url: https://career.seo-usa.org/
+    typical_open_month: 12
+    status_hint: active
+    deadlines:
+      - {kind: opens, date: 2026-12-14, label: Applications open}
+      - {kind: application, date: 2027-02-07, label: Application deadline}
+    last_verified: 2026-11-24 verified-search
+
+  - id: mlt-ascend
+    firm: MLT (Management Leadership for Tomorrow)
+    program: Ascend
+    type: pipeline program
+    fields: [econ, cs]
+    class_years: [freshman]
+    format: fellowship
+    url: https://mlt.smapply.org/prog/ascend_scholar/
+    typical_open_month: 11
+    status_hint: active
+    deadlines:
+      - {kind: opens, date: 2026-11-02, label: Applications open}
+      - {kind: application, date: 2027-01-04, label: Application deadline (needs a nomination)}
+    notes: For freshmen graduating Fall 2029-Summer 2030. Requires a nomination - line one up early.
+    last_verified: 2026-11-24 verified-search (application portal)
+
+  - id: mlt-career-prep
+    firm: MLT (Management Leadership for Tomorrow)
+    program: Career Prep
+    type: pipeline program
+    fields: [econ, cs]
+    class_years: [sophomore]
+    format: fellowship
+    url: https://mlt.org/career-prep/
+    typical_open_month: 8
+    status_hint: active
+    notes: Current cycle (sophomores) general deadline Dec 1, 2026, final Jan 15, 2027. Your cohort applies ~Aug 2027-Jan 2028.
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: forte-emerging-leaders
+    firm: Forté Foundation
+    program: Emerging Leaders conference
+    type: pipeline program
+    fields: [econ]
+    class_years: [freshman, sophomore]
+    format: conference
+    url: https://www.fortefoundation.org/college/events/emerging-leaders/
+    typical_open_month: 3
+    status_hint: active
+    notes: For rising sophomores (class of 2030 = you) and rising juniors; registration ~Mar-Apr. "Rising Be Bold" was not found (possibly renamed/ended).
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: forte-fast-track-finance
+    firm: Forté Foundation
+    program: College Fast Track to Finance
+    type: pipeline program
+    fields: [econ]
+    class_years: [freshman, sophomore, junior]
+    format: conference
+    url: https://www.fortefoundation.org/college/events/finance/
+    status_hint: active
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: girls-who-invest
+    firm: Girls Who Invest
+    program: Scholars Program
+    type: pipeline program
+    fields: [econ]
+    class_years: [freshman, sophomore]
+    format: fellowship
+    url: https://www.girlswhoinvest.org/scholars-program
+    typical_open_month: 8
+    status_hint: active
+    notes: 2027 cycle closed (priority Sep 15, final Oct 15, 2026). Next ~Sep-Oct 2027. Paid internship track is for sophomores.
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: colorstack
+    firm: ColorStack
+    program: ColorStack membership
+    type: pipeline program
+    fields: [cs]
+    class_years: [freshman, sophomore, junior, senior]
+    format: membership
+    url: https://www.colorstack.org/member-application-requirements
+    status_hint: active
+    notes: Rolling membership for undergraduate CS majors in the US/Canada.
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: code2040-fellows
+    firm: Code2040
+    program: Code2040 Fellows
+    type: pipeline program
+    fields: [cs]
+    class_years: [freshman, sophomore, junior]
+    format: fellowship
+    url: https://www.code2040.org/programs
+    typical_open_month: 12
+    status_hint: active
+    deadlines:
+      - {kind: application, date: 2027-02-01, label: Application deadline, approx: true}
+    notes: Now a 10-month skills program without partner companies. Deadline from a third-party (GVSU) calendar.
+    last_verified: 2026-11-24 verified-search (third-party calendar)
+
+  - id: out-for-undergrad
+    firm: Out for Undergrad (O4U)
+    program: O4U conferences (Business, Digital, Engineering + Life Sciences)
+    type: pipeline program
+    fields: [econ, cs, biotech]
+    class_years: []
+    format: conference
+    url: https://www.outforundergrad.org/
+    status_hint: active
+    notes: For LGBTQ+ undergraduates. 2027 dates and class years not verified.
+    last_verified: 2026-11-24 unverified
+
+  - id: rewriting-the-code
+    firm: Rewriting the Code
+    program: Membership + fellowships
+    type: pipeline program
+    fields: [cs]
+    class_years: [freshman, sophomore, junior, senior]
+    format: membership
+    url: https://rewritingthecode.org/students/
+    status_hint: active
+    notes: For women in tech, any year; free membership. 2027 fellowship details not verified.
+    last_verified: 2026-11-24 unverified

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{{ title }}</title>
+  <link rel="alternate" type="text/calendar" title="Deadlines" href="deadlines.ics">
+  <style>{{ css | safe }}</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <h1>{{ title }}</h1>
+      <p class="updated" id="updated">Updated {{ generated_at }}</p>
+    </div>
+    <p class="headline" id="headline"></p>
+  </header>
+
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Sections"></nav>
+  <nav class="subtabs" id="subtabs" aria-label="Sub-sections"></nav>
+
+  <main id="main">
+    <noscript>This dashboard needs JavaScript. The raw data is in <a href="data.json">data.json</a>.</noscript>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script id="radar-data" type="application/json">{{ data_json | safe }}</script>
+  <script>{{ js | safe }}</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+# Runtime dependencies (pinned so GitHub Actions runs are reproducible).
+httpx==0.28.1          # HTTP client (retries/rate limits are in radar/http.py)
+PyYAML==6.0.3          # reads the config/*.yaml files
+Jinja2==3.1.6          # HTML templates for the dashboard and email digest
+dateparser==1.5.1      # turns "January 12, 2027" style text into dates
+beautifulsoup4==4.15.0 # HTML -> text for watched pages and HTML job lists
+anthropic==2.13.0      # Claude API (only used when ANTHROPIC_API_KEY is set)
+# Test-only
+pytest==9.1.1

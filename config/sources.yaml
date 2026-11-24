@@ -1,0 +1,75 @@
+# =============================================================================
+# Sources: every feed the radar reads
+# =============================================================================
+# Each entry is   <source id>:  {type, group, enabled, ...options}
+#   type     which module in radar/sources/ handles it (its @register name)
+#   group    when it runs: "jobs" (every 6 hours) or "daily" (each morning)
+#   enabled  false -> skipped (kept for reference)
+#   name     display name on the dashboard; homepage = credit/info link
+# Adding a source = write one module in radar/sources/ + add one entry here.
+# =============================================================================
+
+sources:
+
+  # ------------------------------------------------ CS / data / AI / quant ----
+  simplify:
+    type: listings_json
+    group: jobs
+    name: SimplifyJobs Summer 2027 Internships
+    homepage: https://github.com/SimplifyJobs/Summer2027-Internships
+    # The underlying data file on the dev branch: Summer AND Off-Season listings.
+    url: https://raw.githubusercontent.com/SimplifyJobs/Summer2027-Internships/dev/.github/scripts/listings.json
+    # Map the repo's categories to our fields (cs / econ / biotech).
+    fields_by_category:
+      Software: [cs]
+      Software Engineering: [cs]
+      AI/ML/Data: [cs]
+      "Data Science, AI & Machine Learning": [cs]
+      Hardware: [cs]
+      Product: [cs]
+      Product Management: [cs]
+      Quant: [cs, econ]
+      Quantitative Finance: [cs, econ]
+    default_fields: [cs]
+
+  zshah101:
+    type: zshah_jobs
+    group: jobs
+    name: zshah101 automated tech internships
+    homepage: https://github.com/zshah101/Automated-List-Of-Summer-2027-and-Fall-2026-Tech-Internships
+    # Its JSON API on GitHub Pages; the same file in the repo is the fallback.
+    url: https://zshah101.github.io/Automated-List-Of-Summer-2027-and-Fall-2026-Tech-Internships/api/jobs.json
+    fallback_url: https://raw.githubusercontent.com/zshah101/Automated-List-Of-Summer-2027-and-Fall-2026-Tech-Internships/main/docs/api/jobs.json
+    fields_by_category:
+      Software: [cs]
+      "Data & ML/AI": [cs]
+      Security: [cs]
+      Hardware: [cs]
+      Quant: [cs, econ]
+      Other: []
+    default_fields: [cs]
+
+  jobseveryhour:
+    type: jobseveryhour
+    group: jobs
+    name: Jobs Every Hour - tech internships
+    homepage: https://jobseveryhour.com/
+    url: https://jobseveryhour.com/api/v1/lists/tech-internships.json
+    # They ask for a link back; this line appears in the dashboard footer.
+    credit: "Tech internship listings courtesy of Jobs Every Hour:"
+    default_fields: [cs]
+
+  # ------------------------------------------------------ Stanford + registry ----
+  # These read our own YAML registries so their known deadlines show up right
+  # away. (The page-watcher that checks the pages themselves comes later.)
+  stanford_pages:
+    type: watched_pages_registry
+    group: daily
+    name: Watched Stanford pages (config/watched_pages.yaml)
+    file: watched_pages.yaml
+
+  early_programs:
+    type: early_programs_registry
+    group: daily
+    name: Early-career program registry (config/early_programs.yaml)
+    file: early_programs.yaml

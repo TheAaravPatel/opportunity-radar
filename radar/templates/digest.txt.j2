@@ -1,0 +1,63 @@
+OPPORTUNITY RADAR - {{ d.today.strftime("%A, %B %-d") }}
+Dashboard: {{ dashboard_url }}
+{% if d.first_digest %}
+
+Welcome! First digest: tracking {{ d.totals.tracked }} opportunities ({{ d.totals.open }} open).
+{% endif %}
+
+== Deadlines in the next 14 days ==
+{% for x in d.deadlines %}
+{{ x.date }} ({{ x.days }}d){% if x.reminder %} [{{ x.days }}-DAY REMINDER]{% endif %} {{ "Opens" if x.kind == "opens" else x.kind | capitalize }}: {{ x.title }} - {{ x.org }}{% if not x.eligible %} [not your class year]{% endif %}
+
+   {{ x.url }}
+{% else %}
+Nothing due in the next two weeks.
+{% endfor %}
+
+== Early programs this week ==
+{% for x in d.early_opening %}
+Opens in {{ x.days }}d: {{ x.title }} - {{ x.org }}  {{ x.url }}
+{% endfor %}
+{% for x in d.early_closing %}
+Closes in {{ x.days }}d: {{ x.title }} - {{ x.org }}  {{ x.url }}
+{% endfor %}
+{% for x in d.early_warnings %}
+Usually opens in {{ x.opens_month }} (~2 weeks): {{ x.title }} - {{ x.org }}  {{ x.url }}
+{% endfor %}
+{% for x in d.new_early_postings %}
+New early-career posting: {{ x.title }} - {{ x.org }}  {{ x.url }}
+{% endfor %}
+{% if not (d.early_opening or d.early_closing or d.early_warnings or d.new_early_postings) %}
+Nothing this week.
+{% endif %}
+
+== New since the last digest ==
+{% for f in fields if d.new_by_field.get(f) %}
+-- {{ field_labels[f] }} ({{ d.new_counts[f] }} new) --
+{% for i in d.new_by_field[f] %}
+* {{ i.title }} - {{ i.org }} (fit {{ i.score }})  {{ i.url }}
+{% endfor %}
+{% else %}
+Nothing new.
+{% endfor %}
+
+== New conferences, hackathons & travel scholarships ==
+{% for i in d.new_conferences %}
+* {{ i.title }} - {{ i.org }} ({{ i.type }})  {{ i.url }}
+{% else %}
+None new.
+{% endfor %}
+
+== Stanford pages that changed ==
+{% for p in d.page_changes %}
+* {{ p.title or p.id }}  {{ p.url }}
+{% else %}
+No watched page changed.
+{% endfor %}
+
+== Sources that failed ==
+{% for s in d.failed_sources %}
+* {{ s.name or s.id }}: {{ s.last_error }}
+{% else %}
+All sources OK.
+{% endfor %}
