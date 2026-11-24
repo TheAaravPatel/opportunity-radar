@@ -116,7 +116,8 @@ function recommendedConference(it) {
 // or - anywhere else - housing AND flights are paid for.
 const FITS = new Set(["bay_area", "chicagoland", "remote", "covered", "no_location"]);
 function travelFits(it, level) {
-  if (!it.travel) return true;                       // not classified yet (older data)
+  // Not classified yet (e.g. a job its feed stopped listing): judge by location alone.
+  if (!it.travel) return it.bay_area || it.chicagoland || it.remote || !it.location;
   if (FITS.has(it.travel)) return true;
   return level === "partial" && it.travel === "partial";
 }
