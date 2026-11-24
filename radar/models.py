@@ -28,8 +28,10 @@ STATUSES = ("open", "opening soon", "expected soon", "closed", "possibly discont
 # Class years, in order. Used for eligibility ("open to freshmen?").
 CLASS_YEARS = ("freshman", "sophomore", "junior", "senior")
 
-# Kinds of deadline we track.
+# Kinds of deadline we track. "event" is a conference's start date: it shows on
+# the calendar but isn't a deadline (no reminders, not in the digest's list).
 DEADLINE_KINDS = ("application", "priority", "opens", "event", "scholarship", "abstract", "registration")
+CONFERENCE_TYPES = ("conference", "hackathon", "travel scholarship")
 
 
 @dataclass
@@ -67,6 +69,7 @@ class Item:
     status_reason: str = ""                                  # why that status, in plain English
     registry_id: str = ""                                    # registry entry this item comes from
     scope: str = ""                                          # sub-feed, e.g. one company in an ATS source
+    dedupe_key: str = ""                                     # override (conferences dedupe by name + year)
     extra: dict = field(default_factory=dict)                # anything else worth showing (notes, format...)
 
 

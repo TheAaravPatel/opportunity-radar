@@ -566,6 +566,25 @@ programs:
   # underclass track). The weekly discovery job searches for new ones. Stanford
   # research programs (Bio-X, BSURP, SSRP-Amgen) live in watched_pages.yaml.
 
+  - id: aea-summer-program
+    firm: American Economic Association
+    program: AEA Summer Training and Scholarship Program (AEASP)
+    fields: [econ]
+    class_years: []
+    format: paid summer
+    location: Washington, DC (American University), May 31 - Jul 23, 2027
+    url: https://www.aeaweb.org/committees/AEASP/apply/2027/
+    typical_month: 11
+    status_hint: active
+    deadlines:
+      - {kind: application, date: 2027-01-31, label: Complete application must be received}
+    notes: >-
+      Fully funded 8-week economics training program for diverse and
+      under-represented undergrads: $3,250 stipend, round-trip travel, room and
+      board. Foundational and advanced levels; no other classes or jobs allowed
+      during it. Class-year rules not verified.
+    last_verified: 2026-11-24 verified-search (official 2027 application page)
+
   # ------------------------------------------------------- pipeline orgs ----
   - id: seo-career
     firm: SEO (Sponsors for Educational Opportunity)
@@ -696,7 +715,11 @@ programs:
     format: conference
     url: https://www.outforundergrad.org/
     status_hint: active
-    notes: For LGBTQ+ undergraduates. 2027 dates and class years not verified.
+    notes: >-
+      For LGBTQ2+ undergraduates (being out isn't required). Conferences are all
+      expenses paid (travel, lodging, meals); the Business conference (finance +
+      consulting) was Oct 8-10, 2026 in NYC. The 2027 cycle opens early 2027 - there's
+      a sign-up form. Max one O4U conference per year, three total.
     last_verified: 2026-11-24 unverified
 
   - id: rewriting-the-code

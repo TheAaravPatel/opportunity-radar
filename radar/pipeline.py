@@ -70,8 +70,9 @@ class Preparer:
             field_method=method,
             eligibility=eligibility,
             early_career=early,
-            dedupe_key=dedupe_key(item.organization, item.title, item.locations),
-            match_key=match_key(item.organization, item.title),
+            # Conferences bring their own key (name + year); jobs use org|title|city.
+            dedupe_key=item.dedupe_key or dedupe_key(item.organization, item.title, item.locations),
+            match_key=item.dedupe_key or match_key(item.organization, item.title),
             cities=cities_of(item.locations),
             location=display_location(item.locations),
             bay_area=is_bay_area(item.locations),

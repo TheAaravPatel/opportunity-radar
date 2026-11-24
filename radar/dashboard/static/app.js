@@ -97,16 +97,33 @@ function openToMe(it, includeNext) {
   return includeNext && it.class_years.includes(NEXT);
 }
 
+// The next real deadline. A conference's own start date ("event") is shown
+// separately on its card, so it doesn't count here.
 function nextDeadline(it) {
-  const upcoming = it.deadlines.filter((d) => d.date >= TODAY);
+  const upcoming = it.deadlines.filter((d) => d.date >= TODAY && d.kind !== "event");
   return upcoming.length ? upcoming[0] : null;
+}
+
+// Conferences page default: hide industry trade shows / PhD-only venues and
+// hackathons that are neither in the Bay Area nor online (spec rules).
+function recommendedConference(it) {
+  if (it.extra.hidden_reason) return false;
+  if (it.type === "hackathon") return it.bay_area || it.remote;
+  return true;
+}
+const COST_LABELS = { free: "free", scholarship: "scholarship-funded", student: "student price", full: "full price" };
+
+function fmtRange(start, end) {
+  if (!start) return "dates TBA";
+  if (!end || end === start) return fmtDate(start);
+  return `${fmtDate(start, start.slice(0, 4) !== end.slice(0, 4))} – ${fmtDate(end)}`;
 }
 
 // ------------------------------------------------------------- tabs/views
 const TABS = [
   { id: "internships", label: "Internships", subs: [["cs", "CS"], ["biotech", "Biotech"], ["econ", "Econ"], ["early", "Early Programs"]] },
   { id: "stanford", label: "Stanford" },
-  { id: "conferences", label: "Conferences & Hackathons", subs: [["upcoming", "Upcoming"], ["scholarships", "Scholarship deadlines"], ["calendar", "Calendar"]] },
+  { id: "conferences", label: "Conferences & Hackathons", subs: [["upcoming", "Upcoming"], ["hackathons", "Hackathons"], ["scholarships", "Scholarship deadlines"], ["calendar", "Calendar"]] },
   { id: "deadlines", label: "Deadlines" },
   { id: "suggested", label: "Suggested sources" },
   { id: "sources", label: "Sources" },
@@ -119,18 +136,23 @@ function itemsFor(tab, sub) {
     return items.filter((it) => !isConference(it) && !isStanford(it) && !isRegistryProgram(it) && hasField(it, sub));
   }
   if (tab === "stanford") return items.filter(isStanford);
-  if (tab === "conferences") return items.filter(isConference);
+  if (tab === "conferences") {
+    if (sub === "upcoming") return items.filter((it) => isConference(it) && it.type !== "hackathon");
+    if (sub === "hackathons") return items.filter((it) => it.type === "hackathon");
+    return items.filter(isConference);
+  }
   return items;
 }
 
 const DEFAULT_FILTERS = {
   q: "", status: "active", type: "", elig: "", plan: false, loc: "", deadline: "", fresh: "", term: "", cost: "", sort: "newest",
+  field: "", showall: false,
 };
 
 function defaultsFor(view) {
   if (view === "internships/early") return { ...DEFAULT_FILTERS, elig: "me", sort: "deadline" };
   if (view === "stanford") return { ...DEFAULT_FILTERS, sort: "deadline" };
-  if (view.startsWith("conferences")) return { ...DEFAULT_FILTERS, sort: "deadline" };
+  if (view.startsWith("conferences")) return { ...DEFAULT_FILTERS, sort: "recommended" };
   return { ...DEFAULT_FILTERS };
 }
 
@@ -166,7 +188,11 @@ function applyFilters(items, f) {
     if (f.fresh === "7" && !isNew(it, 24 * 7)) return false;
     if (f.term === "summer" && !it.terms.some((t) => /summer/i.test(t))) return false;
     if (f.term === "offseason" && !it.extra.off_season) return false;
-    if (f.cost === "funded" && !["free", "scholarship"].includes(it.extra.cost_tier)) return false;
+    const conf = it.extra.conference || {};
+    if (f.cost === "funded" && !["free", "scholarship"].includes(conf.cost_tier || it.extra.cost_tier)) return false;
+    if (f.cost === "student" && !["free", "scholarship", "student"].includes(conf.cost_tier)) return false;
+    if (f.field && !hasField(it, f.field)) return false;
+    if (CONFERENCE_TYPES.has(it.type) && !f.showall && !recommendedConference(it)) return false;
     if (q) {
       const hay = `${it.title} ${it.org} ${it.location} ${it.subcategory} ${it.terms.join(" ")} ${it.extra.notes || ""}`.toLowerCase();
       if (!q.split(/\s+/).every((word) => hay.includes(word))) return false;
@@ -179,6 +205,11 @@ function applyFilters(items, f) {
     posted: (a, b) => (b.posted || "").localeCompare(a.posted || ""),
     deadline: (a, b) => byDeadline(a).localeCompare(byDeadline(b)) || (b.score ?? 0) - (a.score ?? 0),
     score: (a, b) => (b.score ?? 0) - (a.score ?? 0) || (b.first_seen || "").localeCompare(a.first_seen || ""),
+    // Free/scholarship first, then student-priced, then full price; Bay Area or
+    // virtual before far away; then soonest event.
+    recommended: (a, b) => (a.extra.priority ?? 9) - (b.extra.priority ?? 9)
+      || ((a.extra.conference || {}).start_date || "9999").localeCompare((b.extra.conference || {}).start_date || "9999"),
+    event: (a, b) => ((a.extra.conference || {}).start_date || "9999").localeCompare((b.extra.conference || {}).start_date || "9999"),
   };
   return out.sort(sorters[f.sort] || sorters.newest);
 }
@@ -204,7 +235,9 @@ function filterPanel(items, f, view) {
 
   const rows = [
     el("label", { class: "search-wide" }, "Search", search),
-    select("sort", "Sort by", [["newest", "Newest first"], ["deadline", "Deadline soonest"], ["score", "Best eligibility"], ["posted", "Posted date"]], f.sort),
+    select("sort", "Sort by", view.startsWith("conferences")
+      ? [["recommended", "Best value first (free/funded, nearby)"], ["event", "Event date"], ["deadline", "Deadline soonest"], ["newest", "Newest first"]]
+      : [["newest", "Newest first"], ["deadline", "Deadline soonest"], ["score", "Best eligibility"], ["posted", "Posted date"]], f.sort),
     select("status", "Status", [["active", "Open / opening"], ["open", "Open now"], ["all", "All (incl. closed)"]], f.status),
     select("elig", "Eligibility", [["", "Any"], ["me", `Open to ${PLURAL[ME] || "me"}`], ["50", "Score 50+"], ["70", "Score 70+"]], f.elig),
     select("fresh", "New", [["", "Any time"], ["1", "Last 24 hours"], ["7", "Last 7 days"]], f.fresh),
@@ -213,7 +246,13 @@ function filterPanel(items, f, view) {
   ];
   if (types.length > 1) rows.push(select("type", "Type", [["", "All types"], ...types.map((t) => [t, t])], f.type));
   if (isInternship) rows.push(select("term", "Term", [["", "Any term"], ["summer", "Summer"], ["offseason", "Off-season (fall/winter/spring)"]], f.term));
-  if (view.startsWith("conferences")) rows.push(select("cost", "Cost", [["", "Any cost"], ["funded", "Free or scholarship-funded"]], f.cost));
+  if (view === "stanford" || view.startsWith("conferences")) {
+    rows.push(select("field", "Field", [["", "All fields"], ["cs", "CS"], ["econ", "Econ"], ["biotech", "Biotech"]], f.field));
+  }
+  if (view.startsWith("conferences")) {
+    rows.push(select("cost", "Cost", [["", "Any cost"], ["funded", "Free or scholarship-funded"], ["student", "Free, funded or student price"]], f.cost));
+    rows.push(checkbox("showall", "Also show industry / PhD-level events and far-away hackathons", f.showall));
+  }
   if (f.elig === "me" && NEXT) rows.push(checkbox("plan", `Also show ${NEXT} programs (plan ahead)`, f.plan));
 
   const details = el("details", { class: "filters", open: window.innerWidth > 760 || undefined },
@@ -265,13 +304,21 @@ function card(it) {
   const meta = [];
   it.fields.forEach((f) => meta.push(el("span", { class: "chip field", text: f })));
   if (it.field_method === "unplaced") meta.push(el("span", { class: "chip field", text: "field?" }));
-  if (it.subcategory) meta.push(el("span", { class: "chip", text: it.subcategory }));
+  if (it.subcategory && it.subcategory !== it.type) meta.push(el("span", { class: "chip", text: it.subcategory }));
   if (it.type !== "industry internship") meta.push(el("span", { class: "chip", text: it.type }));
   it.terms.slice(0, 3).forEach((t) => meta.push(el("span", { class: "chip", text: t })));
   if (it.remote) meta.push(el("span", { class: "chip", text: "remote" }));
   if (it.class_years.length) meta.push(el("span", { class: "chip", text: it.class_years.map((y) => PLURAL[y]).join(" / ") }));
 
-  const where = [it.org, it.location].filter(Boolean).join(" · ");
+  const conf = it.extra.conference;
+  if (conf) {
+    if (COST_LABELS[conf.cost_tier]) meta.push(el("span", { class: "chip", text: COST_LABELS[conf.cost_tier], title: conf.cost_note || "" }));
+    if (conf.scholarship) meta.push(el("span", { class: "chip new", text: "travel scholarship", title: conf.scholarship_covers || "" }));
+    if (conf.poster_track) meta.push(el("span", { class: "chip", text: "undergrad poster track" }));
+    if (conf.virtual) meta.push(el("span", { class: "chip", text: "virtual" }));
+  }
+  if (it.extra.hidden_reason) meta.push(el("span", { class: "chip warn", text: it.extra.hidden_reason }));
+  const where = [it.org !== it.title ? it.org : "", it.location].filter(Boolean).join(" · ");
   // The status reason repeats the deadline line for open items, so only show
   // it when it adds something ("usually opens in March", "discontinued"...).
   const showReason = it.status_reason && (it.status !== "open" || !nextDeadline(it)) && !(it.status === "opening soon" && nextDeadline(it));
@@ -288,6 +335,9 @@ function card(it) {
         el("div", { class: "card-org", text: where })),
       scoreBadge(it)),
     el("div", { class: "card-meta" }, meta),
+    conf ? el("div", { class: "deadline-line" }, `📅 ${fmtRange(conf.start_date, conf.end_date)}`,
+      conf.start_date && conf.start_date >= TODAY ? ` (${inDays(daysUntil(conf.start_date))})` : "") : null,
+    conf && conf.scholarship_covers ? el("div", { class: "card-reason", text: `Funding: ${conf.scholarship_covers}` }) : null,
     deadlineLine(it),
     showReason ? el("div", { class: "card-reason", text: it.status_reason }) : null,
     it.extra.notes ? el("details", { class: "why" }, el("summary", { text: "Notes" }), el("p", { text: it.extra.notes })) : null,
@@ -358,10 +408,10 @@ function agenda(entries, heading) {
   if (!entries.length) return el("div", { class: "agenda" }, el("h3", { text: heading }), el("div", { class: "empty", text: "No deadlines." }));
   const rows = entries.map((e) => {
     const n = daysUntil(e.date);
-    const kind = e.kind === "opens" ? "Opens" : e.kind === "application" ? "Deadline" : e.kind[0].toUpperCase() + e.kind.slice(1);
+    const kind = { opens: "Opens", application: "Deadline", event: "Event starts" }[e.kind] || e.kind[0].toUpperCase() + e.kind.slice(1);
     return el("div", { class: "agenda-item" },
       el("span", { class: "when" }, fmtDate(e.date, false), el("br"), el("small", { text: inDays(n) })),
-      el("span", { class: "what" }, `${kind}: `, link(e.item.title, e.item.url), ` - ${e.item.org}`,
+      el("span", { class: "what" }, `${kind}: `, link(e.item.title, e.item.url), e.item.org && e.item.org !== e.item.title ? ` - ${e.item.org}` : "",
         e.label ? ` (${e.label}${e.approx ? ", approx." : ""})` : e.approx ? " (approx.)" : ""));
   });
   return el("div", { class: "agenda" }, el("h3", { text: heading }), rows);
@@ -383,7 +433,7 @@ function earlyIntro() {
 
 function deadlinesView() {
   const f = filters();
-  const pool = DATA.items.filter((it) => f.status === "all" || it.status !== "closed");
+  const pool = DATA.items.filter((it) => (f.status === "all" || it.status !== "closed") && (!isConference(it) || recommendedConference(it)));
   const groups = {
     internships: (it) => !isConference(it) && !isStanford(it) && !isEarly(it),
     early: (it) => isEarly(it) && !isStanford(it),
@@ -392,7 +442,7 @@ function deadlinesView() {
   };
   const items = pool.filter((it) => (!f.type || groups[f.type](it)) && (!f.field || it.fields.includes(f.field)));
   const entries = deadlineEntries(items).filter((e) => !f.kind || e.kind === f.kind);
-  const soon = entries.filter((e) => { const n = daysUntil(e.date); return n >= 0 && n <= 14; });
+  const soon = entries.filter((e) => { const n = daysUntil(e.date); return e.kind !== "event" && n >= 0 && n <= 14; });
   const controls = el("details", { class: "filters", open: true }, el("summary", { text: "Filters" }),
     el("div", { class: "filter-row" },
       select("field", "Field", [["", "All fields"], ["cs", "CS"], ["econ", "Econ"], ["biotech", "Biotech"]], f.field || ""),
@@ -425,18 +475,31 @@ function diffBlock(diff) {
 }
 
 function conferencesView() {
-  const items = itemsFor("conferences");
-  if (!items.length) {
-    return el("div", { class: "empty", text: "Conferences, hackathons and travel scholarships arrive in a later build phase." });
+  const items = itemsFor("conferences", state.sub);
+  if (!items.length) return el("div", { class: "empty", text: "No conferences loaded yet." });
+  if (state.sub === "upcoming") return el("div", {}, conferenceIntro(), listView(items));
+  if (state.sub === "hackathons") {
+    return el("div", {}, el("p", { class: "result-count", text: "Bay Area and online hackathons by default; tick the box in Filters to see the rest." }), listView(items));
   }
-  if (state.sub === "upcoming") return listView(items);
-  const scholarship = new Set(["scholarship", "abstract", "registration"]);
-  const entries = deadlineEntries(items.filter((it) => it.status !== "closed"));
+  const shown = items.filter((it) => it.status !== "closed" && recommendedConference(it));
+  const entries = deadlineEntries(shown);
   if (state.sub === "scholarships") {
-    const upcoming = entries.filter((e) => scholarship.has(e.kind) && e.date >= TODAY);
-    return el("div", { class: "panel" }, agenda(upcoming, "Scholarship, abstract and registration deadlines"));
+    // For freshmen the travel scholarship is usually the deadline that matters -
+    // often months before the event itself.
+    const kinds = new Set(["scholarship", "abstract", "registration", "application"]);
+    const upcoming = entries.filter((e) => kinds.has(e.kind) && e.date >= TODAY);
+    return el("div", { class: "panel" },
+      agenda(upcoming.filter((e) => e.kind === "scholarship"), "Travel scholarship deadlines"),
+      agenda(upcoming.filter((e) => e.kind !== "scholarship"), "Abstract, application and registration deadlines"));
   }
   return el("div", { class: "panel" }, calendar(entries));
+}
+
+function conferenceIntro() {
+  return el("p", { class: "result-count" },
+    "Conferences and travel scholarships, best value first: free or scholarship-funded, then student-priced, then full price; ",
+    "Bay Area or virtual before far away. Industry trade shows and PhD-only venues are hidden unless you tick the box in Filters. ",
+    "Hackathons have their own tab.");
 }
 
 function suggestedView() {
@@ -480,7 +543,9 @@ function counts() {
     }
   }
   out.stanford = itemsFor("stanford").filter(isActive).length;
-  out.conferences = itemsFor("conferences").filter(isActive).length;
+  out.conferences = itemsFor("conferences").filter((it) => isActive(it) && recommendedConference(it)).length;
+  out["conferences/upcoming"] = itemsFor("conferences", "upcoming").filter((it) => isActive(it) && recommendedConference(it)).length;
+  out["conferences/hackathons"] = itemsFor("conferences", "hackathons").filter((it) => isActive(it) && recommendedConference(it)).length;
   out.suggested = (DATA.suggestions || []).length;
   return out;
 }
@@ -515,8 +580,9 @@ function renderMain() {
 
 function renderHeader() {
   const fresh = DATA.items.filter((it) => isNew(it, 24)).length;
-  const due = DATA.items.filter((it) => it.status !== "closed").flatMap((it) => it.deadlines)
-    .filter((d) => { const n = daysUntil(d.date); return n >= 0 && n <= 14; }).length;
+  const due = DATA.items.filter((it) => it.status !== "closed" && (!isConference(it) || recommendedConference(it)))
+    .flatMap((it) => it.deadlines)
+    .filter((d) => { const n = daysUntil(d.date); return d.kind !== "event" && n >= 0 && n <= 14; }).length;
   const failing = DATA.sources.filter((s) => s.state === "failing").length;
   const built = new Date(DATA.generated_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   document.getElementById("updated").textContent = `Updated ${ago(DATA.generated_at)} · ${built}`;

@@ -34,7 +34,7 @@ config/            all tunables (YAML) — edit these, not Python, for routine c
   sources.yaml     every feed: type (module), group (jobs|daily), options
   keywords.yaml    field keywords, eligibility rules, early-career words
   companies.yaml   companies polled via public ATS APIs (Phase 2+)
-  early_programs.yaml / watched_pages.yaml   hand-curated registries
+  early_programs.yaml / watched_pages.yaml / conferences.yaml   hand-curated registries
 radar/
   cli.py           `python -m radar fetch|dashboard|digest|verify`
   pipeline.py      fetch → prepare (classify, score) → store → close missing → health
@@ -87,6 +87,11 @@ Use `RADAR_NOW=2027-01-05T15:00:00Z` to pretend it's another date (tests do this
   from the `data` branch and force-push a single fresh commit back (bounded repo size). The
   last 14 days of DBs are workflow artifacts. All data-writing workflows share the
   `radar-data` concurrency group.
+- **Conferences**: dedupe key `conf|<name without year/parentheses>|<year or tba>`; a "tba"
+  entry matches the same name with any year, and registry `aka` names are stored in
+  `conference_aliases`. The registry runs first so it owns the display fields. Event start dates
+  are deadlines of kind `event` (calendar only; never reminders). PhD-only venues and trade shows
+  get `extra.hidden_reason`; far-away hackathons are hidden on the dashboard by default.
 - **Claude API** (later phases): model from `settings.yaml` (`claude-opus-5-5`), only for
   items keyword rules can't place, cached in `llm_cache`, hard per-run caps, everything
   no-ops without `ANTHROPIC_API_KEY`.
@@ -110,5 +115,5 @@ Use `RADAR_NOW=2027-01-05T15:00:00Z` to pretend it's another date (tests do this
 3. ⏳ Econ: PREDOC, Fed (Workday), USAJobs, econ RSS, EconJobMarket (disabled), consulting ATS
 4. ⏳ Page-watcher (snapshot/diff/Playwright, deadline extraction) for Stanford pages
 5. ⏳ Early-programs registry watching + keyword detection + bank/trading ATS (incl. Oracle)
-6. ⏳ Conferences & hackathons
+6. ✅ Conferences & hackathons (built before 3-5 at the owner's request): conferences.yaml (41), student-opportunities, BadgeUp; name+year dedupe with TBA matching and `aka` aliases
 7. ⏳ Weekly discovery (Claude + web search) + approval flow

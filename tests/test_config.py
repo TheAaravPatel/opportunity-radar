@@ -60,3 +60,13 @@ def test_companies(cfg):
             assert c.get("host") and c.get("site"), c["name"]
     workday = [c for c in cfg.companies if c["ats"] == "workday" and c.get("enabled", True)]
     assert len(workday) <= 20, "keep the Workday list short - heavy pollers get bot-blocked"
+
+
+def test_conferences_registry(cfg):
+    entries = cfg.load_file("conferences.yaml")["conferences"]
+    check_entries(entries, "name")
+    for e in entries:
+        assert e.get("type", "conference") in ("conference", "hackathon", "travel scholarship"), e["id"]
+        assert e.get("cost", "unknown") in ("free", "scholarship", "student", "full", "unknown"), e["id"]
+        if e.get("start") and e.get("end"):
+            assert str(e["start"]) <= str(e["end"]), e["id"]

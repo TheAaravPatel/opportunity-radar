@@ -34,7 +34,7 @@ STALE_UPSTREAM_DAYS = 14
 EXTRA_KEYS = (
     "notes", "format", "off_season", "stale", "stanford", "aka", "typical_open_month",
     "expected_open_start", "expected_open_end", "salary", "last_verified", "status_hint",
-    "watch", "watch_note",
+    "watch", "watch_note", "hidden_reason", "priority", "conference",
 )
 
 

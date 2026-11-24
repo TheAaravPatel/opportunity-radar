@@ -99,6 +99,10 @@ def _find_existing(conn, source_id: str, p: Prepared) -> sqlite3.Row | None:
     row = conn.execute("SELECT * FROM opportunities WHERE dedupe_key = ?", (p.dedupe_key,)).fetchone()
     if row:
         return row
+    if p.dedupe_key.startswith("conf|"):
+        row = _find_conference_tba(conn, source_id, p.dedupe_key) or _find_conference_alias(conn, p.dedupe_key)
+        if row:
+            return row
     for candidate in conn.execute("SELECT * FROM opportunities WHERE match_key = ?", (p.match_key,)):
         same_source = conn.execute(
             "SELECT 1 FROM sightings WHERE opportunity_id = ? AND source_id = ?", (candidate["id"], source_id)
@@ -109,6 +113,33 @@ def _find_existing(conn, source_id: str, p: Prepared) -> sqlite3.Row | None:
         if not their_cities or not p.cities or their_cities & set(p.cities):
             return candidate
     return None
+
+
+def _find_conference_tba(conn, source_id: str, key: str) -> sqlite3.Row | None:
+    """Conference keys are "conf|<name>|<year>", and year is "tba" when a feed
+    doesn't know the dates yet. Let "TreeHacks (tba)" and "TreeHacks 2027" match,
+    in either direction - but never two rows from the same source."""
+    name, year = key.rsplit("|", 1)
+    if year == "tba":
+        query = "SELECT * FROM opportunities WHERE dedupe_key LIKE ? ESCAPE '\\' ORDER BY dedupe_key DESC"
+        args = (name.replace("%", "\\%").replace("_", "\\_") + "|%",)
+    else:
+        query, args = "SELECT * FROM opportunities WHERE dedupe_key = ?", (f"{name}|tba",)
+    for candidate in conn.execute(query, args):
+        same_source = conn.execute(
+            "SELECT 1 FROM sightings WHERE opportunity_id = ? AND source_id = ?", (candidate["id"], source_id)
+        ).fetchone()
+        if not same_source:
+            return candidate
+    return None
+
+
+def _find_conference_alias(conn, key: str) -> sqlite3.Row | None:
+    name = key.rsplit("|", 1)[0]
+    return conn.execute(
+        "SELECT o.* FROM conference_aliases a JOIN opportunities o ON o.id = a.opportunity_id WHERE a.alias_key = ?",
+        (name,),
+    ).fetchone()
 
 
 def _row_values(p: Prepared, now: str) -> dict:
@@ -168,6 +199,11 @@ def save_items(conn, source_id: str, prepared: list[Prepared], run_id: int, now:
             if existing["status"] == "closed" and (p.item.status or "open") != "closed":
                 conn.execute("UPDATE opportunities SET closed_at = NULL WHERE id = ?", (opp_id,))
         written_this_run.add(opp_id)
+        owns_row = existing is None or existing["primary_source"] in (None, source_id)
+        if owns_row and p.item.extra.get("conference"):
+            _upsert_conference(conn, opp_id, p.item.extra["conference"])
+        for alias in p.item.extra.get("alias_keys") or []:
+            conn.execute("INSERT OR REPLACE INTO conference_aliases (alias_key, opportunity_id) VALUES (?, ?)", (alias, opp_id))
         _upsert_sighting(conn, opp_id, source_id, p.item, run_id, now)
         for d in p.item.deadlines:
             _upsert_deadline(conn, opp_id, source_id, d, deadline_method, run_id, now)
@@ -191,11 +227,31 @@ def _merge(conn, existing: sqlite3.Row, p: Prepared, now: str) -> None:
     fields = sorted(set(filter(None, (existing["fields"] or "").split(","))) | set(p.fields))
     terms = sorted(set(json.loads(existing["terms"] or "[]")) | set(p.item.terms))
     posted = min(filter(None, [existing["posted_at"], p.item.posted_at]), default=None)
-    status = existing["status"] if existing["status"] != "closed" else "open"
+    # Re-open a closed row only if this source says the item is NOT closed
+    # (a past conference listed twice must stay closed).
+    incoming = p.item.status or "open"
+    status = existing["status"] if existing["status"] != "closed" or incoming == "closed" else incoming
     conn.execute(
         """UPDATE opportunities SET fields=?, terms=?, posted_at=?, last_seen_at=?, status=?,
                early_career=MAX(early_career, ?) WHERE id=?""",
         (",".join(fields), json.dumps(terms), posted, now, status, int(p.early_career), existing["id"]),
+    )
+
+
+def _upsert_conference(conn, opp_id: int, c: dict) -> None:
+    """Conference-specific fields live in their own table (1 row per opportunity)."""
+    def flag(value):
+        return None if value is None else int(bool(value))
+
+    conn.execute(
+        """INSERT OR REPLACE INTO conference_details
+               (opportunity_id, year, start_date, end_date, location, virtual, bay_area, cost_tier,
+                cost_note, scholarship, scholarship_covers, undergrad_eligible, poster_track)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (opp_id, c.get("year"), c.get("start_date"), c.get("end_date"), c.get("location"),
+         flag(c.get("virtual")), flag(c.get("bay_area")), c.get("cost_tier"), c.get("cost_note"),
+         flag(c.get("scholarship")), c.get("scholarship_covers"), flag(c.get("undergrad_eligible")),
+         flag(c.get("poster_track"))),
     )
 
 

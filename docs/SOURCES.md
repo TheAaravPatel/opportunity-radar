@@ -145,3 +145,13 @@ matched the parser)**, and both registries. Of the 73 registry URLs:
 | Unreachable from GitHub's servers | CURIS (3 pages: connection times out on every run, likely campus-only), McKinsey (read timeout every run) | `watch: false`; CURIS deadlines added by hand when posted (usually late January); the CS research-opportunities page is watched instead |
 | Consistent with "possibly discontinued" | Goldman Virtual Insight (404), Google STEP + Meta University (empty JavaScript shells) | Already marked |
 | No 2026/2027 mention (evergreen pages) | SEO, ColorStack, Code2040, O4U, IMC Launchpad, CDDRL, HAI, VPUE departmental list, CS research page | Fine for now; the page-watcher will flag real changes |
+
+## Conferences (built 2026-11-24)
+
+- **student-opportunities** parses 531 events (258 PhD-level CS paper venues and 117 industry
+  dev conferences are hidden by default; 120 hackathons, of which ~40 are Bay Area or online).
+- **BadgeUp** README tables give 56 events in our fields; most 2026 ones are now past (closed).
+  Its Status column is ignored because it's out of date.
+- **config/conferences.yaml** holds 41 hand-checked entries (CS, hackathons, biotech, econ,
+  Stanford-hosted) with travel-scholarship, abstract and registration deadlines verified by web
+  search on 2026-11-24. 17 of them also appear in the feeds and are merged into one card.

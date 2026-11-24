@@ -56,6 +56,20 @@ class Source:
     def fetch(self) -> FetchResult:  # pragma: no cover - implemented by subclasses
         raise NotImplementedError
 
+    def github_last_commit(self, repo: str) -> str | None:
+        """When `repo` ("owner/name") last changed, via GitHub's public API.
+
+        Used to show stale sources in the health panel. Never fails the source:
+        returns None if the API can't be reached (it allows 60 calls/hour).
+        """
+        if not repo:
+            return None
+        try:
+            commits = self.http.get_json(f"https://api.github.com/repos/{repo}/commits?per_page=1")
+            return commits[0]["commit"]["committer"]["date"]
+        except Exception:  # noqa: BLE001
+            return None
+
     def get_json_with_fallback(self) -> tuple[object, str]:
         """GET options["url"]; if that fails, try options["fallback_url"].
 

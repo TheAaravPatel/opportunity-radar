@@ -149,6 +149,9 @@ eligibility:
     - pattern: '\b(new grad|new graduate|entry[- ]level|full[- ]time (role|position))\b'
       points: -20
       reason: Full-time / new-grad role, not an internship
+    - pattern: '\b(high school|high-school|middle school|k-12|grades? (9|10|11|12))\b'
+      points: -40
+      reason: For high school students
 
 # Words that mark a posting as an early-career (freshman/sophomore) program.
 # Used to flag postings in every job feed and match them to the registry.

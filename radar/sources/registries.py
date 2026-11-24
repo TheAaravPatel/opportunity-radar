@@ -197,3 +197,61 @@ def watched_page_items(pages: list[dict], today: date) -> list[Item]:
             )
         )
     return items
+
+
+# ------------------------------------------------------------- conferences
+@register("conferences_registry")
+class ConferencesRegistry(Source):
+    """config/conferences.yaml - hand-curated conferences, hackathons, travel scholarships."""
+
+    def fetch(self) -> FetchResult:
+        data = self.cfg.load_file(self.options.get("file", "conferences.yaml"))
+        return FetchResult(items=conference_registry_items(data.get("conferences", []) or [], today_local()))
+
+
+def conference_registry_items(entries: list[dict], today: date) -> list[Item]:
+    from radar.sources.conferences_common import conference_item, key_name   # avoid an import cycle
+
+    items = []
+    for entry in entries:
+        deadlines = parse_deadlines(entry.get("deadlines"))
+        hint = (entry.get("status_hint") or "").lower()
+        if hint == "cancelled":
+            status, reason = "possibly discontinued", f"Cancelled: {entry.get('notes', '')}".strip()
+        else:
+            status, reason = registry_status(entry, deadlines, today)
+        start, end = to_date_str(entry.get("start")), to_date_str(entry.get("end"))
+        if not start and entry.get("typical_month") and status == "open":
+            reason = f"Dates not announced yet - usually held in {calendar.month_name[int(entry['typical_month'])]}"
+        item = conference_item(
+            source_item_id=entry["id"],
+            name=entry["name"],
+            url=entry["url"],
+            type_=entry.get("type", "conference"),
+            fields=list(entry.get("fields") or []),
+            start=start,
+            end=end,
+            location=entry.get("location", "") or "",
+            virtual=bool(entry.get("virtual", False)),
+            cost=entry.get("cost", "unknown"),
+            cost_note=entry.get("cost_note", "") or "",
+            scholarship=entry.get("travel_scholarship"),
+            scholarship_covers=entry.get("scholarship_covers", "") or "",
+            undergrad_eligible=entry.get("undergrad_eligible"),
+            poster_track=entry.get("poster_track"),
+            deadlines=deadlines,
+            notes=(entry.get("notes") or "").strip(),
+            organizer=entry.get("organizer", "") or "",
+            status=status,
+            status_reason=reason,
+            registry_id=entry["id"],
+            class_years=list(entry.get("class_years") or []),
+            today=today,
+            dedupe_name=entry.get("key_name", "") or "",
+        )
+        item.extra.update(_watch_extra(entry))
+        item.extra["last_verified"] = str(entry.get("last_verified", ""))
+        # Other names feeds use for this event (see conference_aliases in db.py).
+        item.extra["alias_keys"] = [f"conf|{key_name(a)}" for a in entry.get("aka") or []]
+        items.append(item)
+    return items

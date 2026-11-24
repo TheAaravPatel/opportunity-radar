@@ -132,10 +132,33 @@ Never delete an old program: set `status_hint: possibly discontinued` instead.
 Add an entry to `config/watched_pages.yaml` with `id`, `name`, `org`, `url`, `fields`, `type`,
 and any known `deadlines`. Use `render: playwright` for pages that need JavaScript.
 
-### Add a conference
-*(Coming in Phase 6: `config/conferences.yaml` will hold name, field, dates, location, cost,
-travel scholarship and its deadline, abstract and registration deadlines, undergrad
-eligibility, and URL.)*
+### Add a conference, hackathon or travel scholarship
+Add an entry to `config/conferences.yaml` (all fields are explained at the top of the file):
+```yaml
+  - id: acme-bio-conference
+    name: Acme Biology Conference
+    type: conference                 # or hackathon / travel scholarship
+    fields: [biotech]
+    url: https://acmebio.org/2027
+    start: 2027-04-10
+    end: 2027-04-12
+    location: San Diego, CA
+    cost: student                    # free / scholarship / student / full / unknown
+    travel_scholarship: true
+    scholarship_covers: Registration + up to $500 travel
+    undergrad_eligible: true
+    poster_track: true
+    deadlines:
+      - {kind: scholarship, date: 2027-01-15, label: Travel award}
+      - {kind: abstract, date: 2027-01-15, label: Poster abstracts}
+    aka: [ABC 2027]                  # other names feeds use, so they merge into this entry
+```
+The dashboard ranks free or scholarship-funded events first, then student-priced, then full
+price, with Bay Area or virtual events ahead of far-away ones at the same cost. Hackathons have
+their own tab, showing Bay Area and online ones by default. Two conference feeds are also read
+automatically: [student-opportunities](https://github.com/gkarpe2204/student-opportunities)
+(daily bot: conferences, MLH and Devpost hackathons) and
+[BadgeUp](https://github.com/Jose-Gael-Cruz-Lopez/BadgeUp) (stale, used as a seed only).
 
 ### Change what the email or scores do
 - `config/settings.yaml` → `digest:` controls the deadline window, the reminder days (14/7/2)

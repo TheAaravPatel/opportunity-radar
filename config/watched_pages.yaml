@@ -286,6 +286,20 @@ pages:
       no sign of it since. Watched in case it comes back (it preferred declared
       junior majors).
 
+  - id: stanford-in-government-fellowships
+    name: Stanford in Government summer fellowships and stipends
+    org: Stanford in Government (Haas Center)
+    url: https://sig.stanford.edu/fellowships
+    type: fellowship
+    fields: [econ]
+    class_years: []
+    render: auto
+    status_hint: active
+    deadlines:
+      - {kind: application, date: 2027-02-15, label: "Stipend round 1 (2026 was Feb 16)", approx: true}
+      - {kind: application, date: 2027-04-13, label: "Stipend round 2 (2026 was Apr 14)", approx: true}
+    notes: Funded policy fellowships (DC, state and local, 9+ weeks). The Haas Center says the state/local fellowships suit first-years.
+
   # ------------------------------------------------------ all-university ----
   - id: solo-opportunities
     name: SOLO - Stanford opportunities database

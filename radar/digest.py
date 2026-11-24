@@ -138,6 +138,7 @@ def build_digest(conn: sqlite3.Connection, cfg: Config) -> Digest:
         """SELECT d.id AS deadline_id, d.kind, d.date, d.label, d.approx, o.*
            FROM deadlines d JOIN opportunities o ON o.id = d.opportunity_id
            WHERE d.active = 1 AND o.status != 'closed' AND d.date >= ? AND d.date <= ?
+             AND d.kind != 'event'          -- a conference starting isn't a deadline
            ORDER BY d.date""",
         (today.isoformat(), (today + timedelta(days=window)).isoformat()),
     ).fetchall()

@@ -191,6 +191,13 @@ CREATE TABLE IF NOT EXISTS conference_details (
     poster_track       INTEGER
 );
 
+-- Other names a registry conference is known by ("Women in Data Science (WiDS)
+-- Worldwide" = "WiDS Worldwide Conference"), so feeds using them merge into it.
+CREATE TABLE IF NOT EXISTS conference_aliases (
+    alias_key      TEXT PRIMARY KEY,          -- "conf|<name>" (no year)
+    opportunity_id INTEGER NOT NULL REFERENCES opportunities(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS suggestions (
     id            INTEGER PRIMARY KEY,
     kind          TEXT NOT NULL,              -- stanford_page / early_program / conference / company

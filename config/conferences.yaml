@@ -1,0 +1,690 @@
+# =============================================================================
+# Conference registry  (spec Section 3)
+# =============================================================================
+# Conferences, hackathons and travel scholarships worth tracking by hand. For
+# freshmen the TRAVEL SCHOLARSHIP is usually what matters, and its deadline is
+# often months before the conference, so dates and deadlines are tracked
+# separately. (Entries are filled in below; see docs/SOURCES.md for sources.)
+#
+# Fields (only id, name, url are required):
+#   id                  unique slug; don't change it later
+#   name                official name (no year)
+#   key_name            optional: name used to match the same event in other feeds
+#   aka                 other names feeds use for it (they merge into this entry)
+#   type                conference | hackathon | travel scholarship
+#   fields              any of: cs, econ, biotech
+#   start, end          event dates (YYYY-MM-DD); leave out if not announced
+#   typical_month       1-12: month it's usually held (shown when dates are TBA)
+#   location            "City, ST" or "virtual"
+#   virtual             true if online
+#   cost                free | scholarship | student | full | unknown
+#   cost_note           e.g. "$100 student registration"
+#   travel_scholarship  true / false
+#   scholarship_covers  what the scholarship pays for
+#   undergrad_eligible  true / false
+#   poster_track        true if undergrads can present a poster / talk
+#   class_years         [] = any year; otherwise freshman / sophomore / junior / senior
+#   deadlines           list of {kind, date, label, approx}
+#                       kind: scholarship | abstract | registration | application | opens
+#   status_hint         active | cancelled | possibly discontinued
+#   notes               anything else
+#   watch, watch_note   false -> page-watcher skips it (blocks bots / login)
+#   last_verified       when/how this entry was checked
+# =============================================================================
+
+conferences:
+
+  # ======================================================= CS / computing ====
+  - id: tapia
+    name: CMD-IT/ACM Richard Tapia Celebration of Diversity in Computing
+    key_name: richard tapia celebration of diversity in computing
+    type: conference
+    fields: [cs]
+    url: https://tapiaconference.cmd-it.org/
+    typical_month: 9
+    cost: scholarship
+    travel_scholarship: true
+    scholarship_covers: Registration, up to $600 travel reimbursement and up to 3 hotel nights (shared room); paid only if you attend in person
+    undergrad_eligible: true
+    poster_track: true
+    class_years: []
+    deadlines:
+      - {kind: scholarship, date: 2027-03-03, label: "Scholarship application (2026 cycle closed Mar 3 - expect about the same)", approx: true}
+    notes: 2026 was Sep 16-18 in Atlanta. 2027 dates not announced yet. Accepted poster presenters without a scholarship pay their own way.
+    last_verified: 2026-11-24 verified-search (official scholarship + submission pages)
+
+  - id: grace-hopper
+    name: Grace Hopper Celebration
+    type: conference
+    fields: [cs]
+    url: https://ghc.anitab.org/
+    typical_month: 10
+    cost: unknown
+    status_hint: possibly discontinued
+    notes: >-
+      AnitaB.org cancelled GHC 2026 two weeks before it opened (funding shortfall)
+      and is "evaluating strategic alternatives"; no 2027 US event announced.
+      GHC India (Jan 20-22, 2027, Bengaluru) still runs.
+    last_verified: 2026-11-24 verified-search (AnitaB.org press release)
+
+  - id: acm-w-conference-scholarships
+    name: ACM-W Scholarships for Attendance at Research Conferences
+    type: travel scholarship
+    fields: [cs]
+    url: https://women.acm.org/scholarships/
+    cost: scholarship
+    travel_scholarship: true
+    scholarship_covers: Up to $600 (same continent) or $1,200 (intercontinental) to attend any CS research conference; not usable for GHC or Tapia
+    undergrad_eligible: true
+    class_years: []
+    deadlines:
+      - {kind: scholarship, date: 2026-12-15, label: "For conferences Feb 1 - Mar 31, 2027 (includes SIGCSE)"}
+      - {kind: scholarship, date: 2027-02-15, label: "Next cycle, for conferences in Apr-May 2027 (schedule from third-party sites)", approx: true}
+    notes: For undergrad and grad women in CS or related fields. One-time award; a support letter must be uploaded by the deadline.
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: sigcse-ts
+    name: SIGCSE Technical Symposium
+    type: conference
+    fields: [cs]
+    url: https://2027.sigcse-ts.acm.org/
+    start: 2027-02-17
+    end: 2027-02-20
+    location: Sacramento, CA
+    cost: student
+    cost_note: Accepted student volunteers get free base registration plus SIGCSE student membership
+    travel_scholarship: false
+    scholarship_covers: Use the ACM-W scholarship (Dec 15 deadline) for travel
+    undergrad_eligible: true
+    poster_track: true
+    class_years: []
+    deadlines:
+      - {kind: scholarship, date: 2026-12-15, label: ACM-W travel scholarship deadline for this conference}
+      - {kind: registration, date: 2027-02-01, label: Presenters must register}
+    notes: >-
+      CS education conference. Student volunteers must be 18+, enrolled, and name a
+      faculty sponsor - sign up as early as possible (volunteers2027@sigcse-ts.acm.org).
+      The 2027 Student Research Competition / posters deadline (Sep 30) has passed.
+    last_verified: 2026-11-24 verified-search (official 2027 site)
+
+  - id: nsbe-convention
+    name: NSBE Annual Convention
+    key_name: nsbe annual convention
+    type: conference
+    fields: [cs]
+    url: https://convention.nsbe.org/
+    start: 2027-03-31
+    end: 2027-04-04
+    location: Boston, MA
+    cost: student
+    cost_note: "Collegiate member rates: $345 early bird, $470 regular, $650 late/on-site"
+    travel_scholarship: false
+    scholarship_covers: Chapters often fund members; ask scholarships@nsbe.org
+    undergrad_eligible: true
+    deadlines:
+      - {kind: registration, date: 2026-12-01, label: Early-bird rate ends (from the rate sheet), approx: true}
+    notes: National Society of Black Engineers. Collegiate membership required. Large career fair.
+    last_verified: 2026-11-24 verified-search (official rate sheet)
+
+  - id: shpe-convention
+    name: SHPE National Convention
+    type: conference
+    fields: [cs]
+    url: https://shpe.org/engage/events/national-convention/
+    start: 2027-10-27
+    end: 2027-10-30
+    location: Salt Lake City, UT
+    cost: unknown
+    travel_scholarship: false
+    scholarship_covers: Many chapters pay for delegations; SHPE seeks donor-funded student stipends
+    undergrad_eligible: true
+    notes: Society of Hispanic Professional Engineers - large career fair. 2027 dates are from third-party listings; shpe.org still shows 2026.
+    last_verified: 2026-11-24 verified-search (third-party listings)
+
+  - id: ostem-conference
+    name: oSTEM Annual Conference
+    type: conference
+    fields: [cs, biotech]
+    url: https://conference.ostem.org/
+    typical_month: 10
+    cost: unknown
+    undergrad_eligible: true
+    notes: For LGBTQ+ people in STEM. The 2026 conference ran Oct 22-24 in Albuquerque; 2027 not announced.
+    last_verified: 2026-11-24 verified-search
+
+  - id: colorstack-summit
+    name: ColorStack Stacked Up Summit
+    type: conference
+    fields: [cs]
+    url: https://www.stackedupsummit.org/
+    typical_month: 8
+    cost: free
+    cost_note: Free; has required ColorStack membership
+    undergrad_eligible: true
+    notes: For Black and Latinx undergrad CS students. 2026 was in San Francisco in August. Ask summit@colorstack.org about travel.
+    last_verified: 2026-11-24 verified-search
+
+  - id: afrotech
+    name: AfroTech Conference
+    type: conference
+    fields: [cs]
+    url: https://afrotechconference.com/
+    start: 2027-11-01
+    end: 2027-11-05
+    location: Houston, TX
+    cost: full
+    cost_note: Conference pass $350 early bird / $625 standard; no student price found
+    travel_scholarship: false
+    undergrad_eligible: true
+    deadlines:
+      - {kind: registration, date: 2027-03-01, label: Early-bird pricing ends}
+    notes: The general AfroTech student scholarship is retired; sponsor programs (e.g. Disney x AfroTech Scholars) may reopen.
+    last_verified: 2026-11-24 verified-search (official site + FAQ)
+
+  - id: wids-stanford
+    name: WiDS Worldwide Stanford Conference
+    key_name: wids worldwide conference
+    aka: [Women in Data Science (WiDS) Worldwide, Women in Data Science Worldwide Conference]
+    type: conference
+    fields: [cs, econ]
+    url: https://www.widsworldwide.org/conferences/
+    typical_month: 3
+    location: Stanford, CA
+    cost: unknown
+    notes: >-
+      Women in Data Science - on campus, historically free or low-cost with a
+      livestream. WiDS became an independent nonprofit in 2026; Stanford still
+      co-hosts. 2027 date not announced; datathon details due January 2027.
+    last_verified: 2026-11-24 verified-search
+
+  # ============================================================ hackathons ====
+  - id: treehacks
+    name: TreeHacks
+    type: hackathon
+    fields: [cs]
+    url: https://treehacks.com/
+    start: 2027-02-12
+    end: 2027-02-14
+    location: Stanford, CA
+    cost: free
+    undergrad_eligible: true
+    notes: >-
+      Stanford's own 36-hour hackathon. Applications are open; Stanford students who
+      apply by an (unpublished) priority deadline get priority - apply early at
+      trunk.treehacks.com.
+    last_verified: 2026-11-24 verified-search (official site)
+
+  - id: sf-hacks
+    name: SF Hacks
+    type: hackathon
+    fields: [cs]
+    url: https://www.sfhacks.io/
+    start: 2027-02-19
+    end: 2027-02-21
+    location: San Francisco, CA
+    cost: free
+    undergrad_eligible: true
+    notes: San Francisco State University's hackathon.
+    last_verified: 2026-11-24 verified-search
+
+  - id: la-hacks
+    name: LA Hacks
+    type: hackathon
+    fields: [cs]
+    url: https://www.lahacks.com/
+    start: 2027-04-16
+    end: 2027-04-18
+    location: Los Angeles, CA
+    cost: free
+    undergrad_eligible: true
+    notes: UCLA's hackathon at Pauley Pavilion. Official site says "mid-April 2027"; exact dates are from third-party listings.
+    last_verified: 2026-11-24 verified-search
+
+  - id: cal-hacks
+    name: Cal Hacks
+    type: hackathon
+    fields: [cs]
+    url: https://www.calhacks.io/
+    typical_month: 10
+    location: San Francisco, CA
+    cost: free
+    undergrad_eligible: true
+    notes: UC Berkeley's hackathon (Cal Hacks 13.0 was Oct 23-25, 2026 in San Francisco). Next edition not announced.
+    last_verified: 2026-11-24 verified-search
+
+  - id: hackdavis
+    name: HackDavis
+    type: hackathon
+    fields: [cs]
+    url: https://hackdavis.io/
+    typical_month: 5
+    location: Davis, CA
+    cost: free
+    undergrad_eligible: true
+    notes: UC Davis hackathon (2026 was May 9-10). 2027 dates not announced.
+    last_verified: 2026-11-24 verified-search
+
+  # ===================================================== Stanford-hosted =====
+  - id: stanford-uar-conference-grant
+    name: Stanford Undergraduate Research Conference Grant
+    type: travel scholarship
+    fields: [cs, econ, biotech]
+    url: https://undergradresearch.stanford.edu/fund-your-project/explore-student-grants/conference
+    cost: scholarship
+    travel_scholarship: true
+    scholarship_covers: Up to $1,500 for transportation and registration when you've been accepted to present your own research at any conference
+    undergrad_eligible: true
+    class_years: []
+    deadlines:
+      - {kind: scholarship, date: 2027-05-01, label: Final cycle of the year (apply BEFORE the conference)}
+    notes: Decisions take ~4 weeks and funds ~3-4 weeks more; a faculty mentor letter is due 6 days after you apply. FSI has a separate up-to-$500 grant for internationally focused conferences.
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: surps
+    name: Stanford Symposium of Undergraduate Research and Public Service (SURPS)
+    key_name: surps
+    type: conference
+    fields: [cs, econ, biotech]
+    url: https://undergradresearch.stanford.edu/share/surps-asurps
+    typical_month: 4
+    location: Stanford, CA
+    cost: free
+    undergrad_eligible: true
+    poster_track: true
+    notes: Present your research or public-service work on campus. Now once a year (spring); 2026 was Apr 25 at Burnham Pavilion.
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: stanford-urtc
+    name: Stanford Undergraduate Research Technology Conference (URTC)
+    key_name: stanford urtc
+    type: conference
+    fields: [cs, biotech]
+    url: https://web.stanford.edu/group/ieee/urtc/index.html
+    start: 2027-05-15
+    end: 2027-05-15
+    location: Stanford, CA
+    cost: unknown
+    undergrad_eligible: true
+    poster_track: true
+    notes: Run by Stanford's IEEE student branch - papers, posters and lightning talks (engineering, ML, biomedical devices). Date is tentative; deadlines not posted yet.
+    last_verified: 2026-11-24 verified-search (official page)
+
+  # ================================================== biotech / life sciences =
+  - id: abrcms
+    name: ABRCMS (Annual Biomedical Research Conference for Minoritized Scientists)
+    key_name: abrcms
+    type: conference
+    fields: [biotech]
+    url: https://abrcms.org/about-abrcms/past-future-conferences/
+    typical_month: 11
+    cost: scholarship
+    travel_scholarship: true
+    scholarship_covers: Registration, shared housing and/or travel - for first-time student presenters (full travel awards are limited)
+    undergrad_eligible: true
+    poster_track: true
+    deadlines:
+      - {kind: scholarship, date: 2027-09-10, label: "Travel award (2026 closed Sep 11 - expect late summer)", approx: true}
+    notes: Built for undergrads; presenting needs a research abstract. 2026 ran Nov 18-21 in Seattle; 2027 city and dates not announced.
+    last_verified: 2026-11-24 verified-search (official travel-award page)
+
+  - id: sacnas
+    name: SACNAS Annual Conference
+    key_name: sacnas national diversity in stem conference
+    type: conference
+    fields: [biotech, cs]
+    url: https://www.sacnas.org/conference
+    start: 2027-10-28
+    end: 2027-10-30
+    location: Kansas City, MO
+    cost: scholarship
+    travel_scholarship: true
+    scholarship_covers: Travel, lodging and/or registration for SACNAS student members (18+, any STEM major; GPA not considered)
+    undergrad_eligible: true
+    poster_track: true
+    deadlines:
+      - {kind: scholarship, date: 2027-03-26, label: "Travel scholarship + spring abstracts (2026 closed Mar 27 - expect similar)", approx: true}
+    notes: Freshmen OK; one abstract per student. One SACNAS page says Oct 31-Nov 2, the conference page says Oct 28-30.
+    last_verified: 2026-11-24 verified-search (official pages)
+
+  - id: aaas-annual-meeting
+    name: AAAS Annual Meeting
+    type: conference
+    fields: [biotech, cs, econ]
+    url: https://www.aaas.org/events/2027-annual-meeting
+    start: 2027-02-18
+    end: 2027-02-20
+    location: Chicago, IL
+    cost: student
+    travel_scholarship: true
+    scholarship_covers: AAAS Travel Awards reimburse up to $1,600 (flight/train + up to 3 hotel nights); undergrads eligible
+    undergrad_eligible: true
+    poster_track: true
+    deadlines:
+      - {kind: scholarship, date: 2026-10-01, label: AAAS Travel Award (closed for 2027 - plan for next year)}
+    notes: Student poster competition (see meetings.aaas.org/student-posters for rules).
+    last_verified: 2026-11-24 verified-search
+
+  - id: asbmb-annual-meeting
+    name: ASBMB Annual Meeting
+    type: conference
+    fields: [biotech]
+    url: https://www.asbmb.org/annual-meeting
+    start: 2027-04-03
+    end: 2027-04-06
+    location: Boston, MA
+    cost: student
+    travel_scholarship: true
+    scholarship_covers: Travel awards for an abstract's first author (ASBMB member, 2027 dues paid); undergrads can use the Student Chapters Travel Award
+    undergrad_eligible: true
+    poster_track: true
+    deadlines:
+      - {kind: abstract, date: 2026-12-08, label: "Abstracts + travel awards + Undergraduate Poster Competition (11:59pm ET, won't be extended)"}
+    notes: Biochemistry and molecular biology. The 31st Undergraduate Poster Competition picks finalists in January; freshmen can enter with a first-author abstract.
+    last_verified: 2026-11-24 verified-search (official pages)
+
+  - id: biophysical-society
+    name: Biophysical Society Annual Meeting
+    type: conference
+    fields: [biotech]
+    url: https://www.biophysics.org/2027meeting
+    start: 2027-02-20
+    end: 2027-02-24
+    location: Philadelphia, PA
+    cost: student
+    travel_scholarship: true
+    scholarship_covers: Member travel awards (undergrad eligibility not confirmed)
+    undergrad_eligible: true
+    poster_track: true
+    deadlines:
+      - {kind: abstract, date: 2027-01-05, label: Late abstracts (poster only; dates from a third-party summary)}
+    notes: Has an Undergraduate Poster Award Competition (UPAC). Early registration reportedly runs to Jan 5.
+    last_verified: 2026-11-24 verified-search
+
+  - id: ismb
+    name: ISMB/ECCB (Intelligent Systems for Molecular Biology)
+    key_name: ismb
+    type: conference
+    fields: [biotech, cs]
+    url: https://www.iscb.org/ismbeccb2027/home
+    start: 2027-07-18
+    end: 2027-07-22
+    location: Copenhagen, Denmark (+ virtual)
+    cost: student
+    travel_scholarship: true
+    scholarship_covers: Conference fellowships cover ~50% of travel + registration, by invitation after your abstract/poster is accepted (ISCB members; undergrads were eligible in 2026)
+    undergrad_eligible: true
+    poster_track: true
+    deadlines:
+      - {kind: abstract, date: 2027-01-14, label: Proceedings papers}
+      - {kind: abstract, date: 2027-04-08, label: Talks + posters (needed for fellowships)}
+    notes: The main computational-biology conference; in practice you need computational results to present. Has a Student Council Symposium.
+    last_verified: 2026-11-24 verified-search (official key dates)
+
+  - id: bmes-annual-meeting
+    name: BMES Annual Meeting
+    type: conference
+    fields: [biotech, cs]
+    url: https://member.bmes.org/future-annual-meetings
+    start: 2027-10-06
+    end: 2027-10-09
+    location: Columbus, OH
+    cost: unknown
+    undergrad_eligible: true
+    poster_track: true
+    notes: Biomedical Engineering Society. 2026 had a dedicated undergraduate research abstract track (in-person presenters).
+    last_verified: 2026-11-24 verified-search
+
+  - id: asm-microbe
+    name: ASM Microbe
+    type: conference
+    fields: [biotech]
+    url: https://asm.org/events/asm-microbe/home
+    start: 2027-06-22
+    end: 2027-06-25
+    location: Chicago, IL
+    cost: student
+    travel_scholarship: true
+    scholarship_covers: $1,000 + free registration (2 recipients per meeting; ASM members with an unpublished abstract)
+    undergrad_eligible: true
+    poster_track: true
+    deadlines:
+      - {kind: scholarship, date: 2026-12-01, label: "Travel award + early abstracts (2pm ET)"}
+      - {kind: abstract, date: 2027-01-20, label: "Regular abstracts (2pm ET)"}
+      - {kind: registration, date: 2027-04-01, label: Presenting authors must register}
+    last_verified: 2026-11-24 verified-search (official pages)
+
+  - id: sdb-annual-meeting
+    name: Society for Developmental Biology Annual Meeting
+    type: conference
+    fields: [biotech]
+    url: https://www.sdbonline.org/2027mtg
+    start: 2027-07-17
+    end: 2027-07-20
+    location: St. Louis, MO
+    cost: unknown
+    undergrad_eligible: true
+    deadlines:
+      - {kind: opens, date: 2027-02-01, label: Registration opens (February), approx: true}
+    notes: Abstract deadline usually in April; travel awards not posted yet.
+    last_verified: 2026-11-24 verified-search
+
+  - id: gsa-drosophila
+    name: GSA Annual Drosophila Research Conference
+    type: conference
+    fields: [biotech]
+    url: https://genetics-gsa.org/drosophila-2027/
+    start: 2027-02-17
+    end: 2027-02-21
+    location: Philadelphia, PA
+    cost: unknown
+    travel_scholarship: true
+    scholarship_covers: Victoria Finnerty Undergraduate Travel Award, up to $599 for undergrad GSA members who present (2027 round closed in Sept)
+    undergrad_eligible: true
+    poster_track: true
+    deadlines:
+      - {kind: registration, date: 2026-12-18, label: Registration deadline}
+    notes: Next multi-community TAGC genetics meeting is expected in 2028.
+    last_verified: 2026-11-24 verified-search
+
+  - id: igem-jamboree
+    name: iGEM Grand Jamboree
+    type: conference
+    fields: [biotech, cs]
+    url: https://jamboree.igem.org/
+    start: 2027-10-18
+    end: 2027-10-21
+    location: Paris, France
+    cost: full
+    cost_note: Team fees (2025 were $5,500-6,500); students join through a university team
+    undergrad_eligible: true
+    poster_track: true
+    notes: >-
+      Synthetic biology competition. Stanford iGEM picks up to ~8 undergrads just
+      before winter break and needs no bioengineering experience - contact
+      stanfordigemteam@gmail.com or @stanford_igem.
+    last_verified: 2026-11-24 verified-search (official site + Stanford Report)
+
+  - id: cell-bio-ascb
+    name: Cell Bio (ASCB|EMBO Meeting)
+    type: conference
+    fields: [biotech]
+    url: https://www.ascb.org/cellbio2026/
+    start: 2026-12-12
+    end: 2026-12-15
+    location: San Diego, CA
+    cost: student
+    travel_scholarship: true
+    scholarship_covers: ASCB travel grants (2026 round closed Aug 31 - plan for Cell Bio 2027)
+    undergrad_eligible: true
+    poster_track: true
+    deadlines:
+      - {kind: scholarship, date: 2026-08-31, label: Travel grant (closed)}
+      - {kind: abstract, date: 2026-09-14, label: Final abstracts (closed)}
+    last_verified: 2026-11-24 verified-search
+
+  # ==================================================== econ / finance / policy =
+  - id: assa-aea-annual-meeting
+    name: ASSA/AEA Annual Meeting
+    type: conference
+    fields: [econ]
+    url: https://www.aeaweb.org/conference/2027
+    start: 2027-01-03
+    end: 2027-01-05
+    location: Washington, DC
+    cost: student
+    cost_note: Student registration; selected AEA sessions are livestreamed free
+    travel_scholarship: false
+    undergrad_eligible: true
+    notes: The big economics meeting - no undergrad program, but you can attend or watch the free livestreams. AEA's undergrad research guide is at aeaweb.org/resources/students/undergrad-research.
+    last_verified: 2026-11-24 verified-search
+
+  - id: midwest-economics-association
+    name: Midwest Economics Association Annual Meetings (undergraduate research sessions)
+    key_name: midwest economics association
+    type: conference
+    fields: [econ]
+    url: https://mea.sites.grinnell.edu/
+    start: 2027-04-02
+    end: 2027-04-04
+    location: Indianapolis, IN
+    cost: student
+    cost_note: $20 submission fee + $50 registration if accepted
+    undergrad_eligible: true
+    poster_track: true
+    deadlines:
+      - {kind: abstract, date: 2026-12-01, label: Undergraduate research proposal or draft paper}
+    notes: Accepts a 3-5 page proposal, so you don't need finished results - very freshman-friendly.
+    last_verified: 2026-11-24 verified-search (official 2027 undergrad guidelines PDF)
+
+  - id: eea-ipe-undergrad
+    name: Eastern Economic Association - Issues in Political Economy undergraduate sessions
+    key_name: eastern economic association
+    type: conference
+    fields: [econ]
+    url: https://www.elon.edu/u/academics/business/ipe/the-conference/
+    start: 2027-02-11
+    end: 2027-02-14
+    location: New York, NY
+    cost: unknown
+    undergrad_eligible: true
+    poster_track: true
+    deadlines:
+      - {kind: abstract, date: 2027-01-22, label: IPE undergrad session submissions (needs a faculty mentor)}
+    notes: Questions to IPE@lists.elon.edu. Past submission fee was $0.
+    last_verified: 2026-11-24 verified-search
+
+  - id: carroll-round
+    name: Carroll Round Undergraduate Economics Research Conference
+    type: conference
+    fields: [econ]
+    url: https://sfs.georgetown.edu/academics/research-initiatives/carroll-round/apply/
+    start: 2027-04-22
+    end: 2027-04-25
+    location: Washington, DC
+    cost: unknown
+    undergrad_eligible: true
+    poster_track: true
+    notes: Georgetown's undergrad econ research conference. Needs a full research paper, so it suits upperclassmen; rolling review.
+    last_verified: 2026-11-24 verified-search
+
+  - id: weai-undergrad
+    name: WEAI Annual Conference - Undergraduate Student Research Program
+    type: conference
+    fields: [econ]
+    url: https://www.weai.org/undergrad-student-program
+    start: 2027-06-27
+    end: 2027-07-01
+    location: Honolulu, HI
+    cost: unknown
+    undergrad_eligible: true
+    poster_track: true
+    deadlines:
+      - {kind: abstract, date: 2027-03-22, label: Research proposals}
+    notes: Only through WEAI institutional-member universities - check whether Stanford is one.
+    last_verified: 2026-11-24 verified-search
+
+  - id: cleveland-fed-economic-scholars
+    name: Cleveland Fed Economic Scholars Program
+    type: conference
+    fields: [econ]
+    url: https://www.clevelandfed.org/events/economic-scholars-program
+    typical_month: 4
+    location: Cleveland, OH (hybrid)
+    virtual: true
+    cost: free
+    undergrad_eligible: true
+    poster_track: true
+    deadlines:
+      - {kind: opens, date: 2027-01-04, label: Applications open}
+    notes: Undergrad econ research conference (2026 was Apr 17); non-presenting student roles exist too. 2026 application deadline was Feb 20.
+    last_verified: 2026-11-24 verified-search
+
+  - id: college-fed-challenge
+    name: College Fed Challenge
+    type: conference
+    fields: [econ]
+    url: https://www.federalreserve.gov/aboutthefed/educational-tools/college-fed-challenge-overview.htm
+    typical_month: 10
+    cost: free
+    undergrad_eligible: true
+    notes: Team monetary-policy competition; Stanford would compete in the San Francisco District. 2026 team registration closed Sep 30 - check whether Stanford has a team for fall 2027.
+    last_verified: 2026-11-24 verified-search
+
+  - id: sadie-collective-symposium
+    name: Sadie Collective x Brookings Research Symposium
+    type: conference
+    fields: [econ]
+    url: https://www.sadiecollective.org/researchsymposium
+    start: 2027-02-25
+    end: 2027-02-25
+    location: Washington, DC
+    cost: unknown
+    undergrad_eligible: true
+    notes: For Black women and gender-expansive students in economics and related fields; the main SACE conference date is TBA (2026 was Feb 26-27).
+    last_verified: 2026-11-24 verified-search
+
+  - id: hks-public-policy-leadership-conference
+    name: Harvard Kennedy School Public Policy Leadership Conference (PPLC)
+    type: conference
+    fields: [econ]
+    url: https://www.hks.harvard.edu/educational-programs/undergraduate-opportunities/public-policy-leadership-conference
+    typical_month: 10
+    location: Cambridge, MA
+    cost: free
+    travel_scholarship: true
+    scholarship_covers: Fully funded (travel, lodging, meals - per university fellowship offices)
+    undergrad_eligible: true
+    deadlines:
+      - {kind: application, date: 2027-07-10, label: "Application (2026 window was May 15 - Jul 10)", approx: true}
+    notes: Needs 2+ completed semesters, 3.0 GPA, US citizen/PR/DACA and a public-service record - so you can apply in summer 2027.
+    last_verified: 2026-11-24 verified-search
+
+  # ========================================================= Stanford-hosted =
+  - id: stanford-drug-discovery-symposium
+    name: Stanford Drug Discovery Symposium (SDDS)
+    type: conference
+    fields: [biotech]
+    url: https://med.stanford.edu/cvi/events/sdds2027-stanford-drug-discovery-symposium.html
+    start: 2027-04-26
+    end: 2027-04-27
+    location: Stanford, CA
+    cost: unknown
+    poster_track: true
+    deadlines:
+      - {kind: abstract, date: 2027-03-30, label: Poster registration (11:59pm PT)}
+    notes: Tickets via Eventbrite; undergrad eligibility for posters not stated.
+    last_verified: 2026-11-24 verified-search (official page)
+
+  - id: summa-conference
+    name: SUMMA Conference (Stanford University Minority Medical Alliance)
+    key_name: summa
+    type: conference
+    fields: [biotech]
+    url: https://med.stanford.edu/che/collegeandprehealthstudents.html
+    start: 2027-02-06
+    end: 2027-02-06
+    location: Stanford, CA
+    cost: unknown
+    undergrad_eligible: true
+    notes: Pre-health conference for college students at the School of Medicine.
+    last_verified: 2026-11-24 verified-search

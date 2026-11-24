@@ -101,3 +101,30 @@ sources:
     group: [jobs, daily]
     name: Early-career program registry (config/early_programs.yaml)
     file: early_programs.yaml
+
+  # ------------------------------------------- conferences, hackathons, scholarships ----
+  # The registry is listed first so that when the same conference also comes
+  # from a feed, our hand-checked entry owns the dashboard details (the feed's
+  # deadlines are still added to it).
+  conference_registry:
+    type: conferences_registry
+    group: [jobs, daily]
+    name: Conference registry (config/conferences.yaml)
+    file: conferences.yaml
+
+  student_opportunities:
+    type: student_opportunities
+    group: [jobs, daily]
+    name: gkarpe2204 student conferences & hackathons
+    homepage: https://github.com/gkarpe2204/student-opportunities
+    url: https://raw.githubusercontent.com/gkarpe2204/student-opportunities/main/data/conferences.json
+    fallback_url: https://gkarpe2204.github.io/student-opportunities/conferences.json
+
+  badgeup:
+    type: badgeup_readme
+    group: [jobs, daily]
+    name: BadgeUp undergrad conferences (stale - seed only)
+    homepage: https://github.com/Jose-Gael-Cruz-Lopez/BadgeUp
+    url: https://raw.githubusercontent.com/Jose-Gael-Cruz-Lopez/BadgeUp/main/README.md
+    repo: Jose-Gael-Cruz-Lopez/BadgeUp
+

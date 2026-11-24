@@ -125,3 +125,47 @@ def test_registry_deadline_removed_from_yaml(conn, cfg, tmp_path):
     (tmp_path / "early_programs.yaml").write_text("programs:\n  - id: p1\n    firm: F\n    program: P\n    url: https://p.test\n")
     run_group(conn, test_cfg, make_http({}))
     assert conn.execute("SELECT COUNT(*) FROM deadlines WHERE active=1").fetchone()[0] == 0
+
+
+def test_duplicate_closed_item_stays_closed(conn, cfg, feeds):
+    """A source listing the same past event twice must not re-open it."""
+    past = row("p1", title="Old Event")
+    feeds[A] = [past, {**past, "id": "id-p2"}] + feeds[A]
+    sources = {"a": listing_source(A)}
+    run(conn, cfg, feeds, sources)
+    conn.execute("UPDATE opportunities SET status='closed' WHERE title='Old Event'")
+    from radar import store
+    from radar.models import Item
+    from radar.pipeline import Preparer
+    prep = Preparer(make_cfg(cfg, sources))
+    closed_item = Item(source_item_id="id-p2", title="Old Event", organization="Acme",
+                       locations=["Palo Alto, CA"], status="closed")
+    store.save_items(conn, "a", [prep.prepare(closed_item)], run_id=999, now="2026-11-24T18:00:00Z", deadline_method="structured")
+    assert conn.execute("SELECT status FROM opportunities WHERE title='Old Event'").fetchone()["status"] == "closed"
+
+
+def test_conference_with_unknown_year_matches_dated_one(conn, cfg):
+    from radar import store
+    from radar.models import Item
+    from radar.pipeline import Preparer
+    prep = Preparer(make_cfg(cfg, {}))
+    dated = Item(source_item_id="r1", title="TreeHacks", organization="TreeHacks", dedupe_key="conf|treehacks|2027")
+    undated = Item(source_item_id="f1", title="TreeHacks", organization="TreeHacks", dedupe_key="conf|treehacks|tba")
+    store.save_items(conn, "registry", [prep.prepare(dated)], run_id=1, now="2026-11-24T18:00:00Z", deadline_method="manual")
+    store.save_items(conn, "feed", [prep.prepare(undated)], run_id=2, now="2026-11-24T18:00:00Z", deadline_method="structured")
+    assert conn.execute("SELECT COUNT(*) FROM opportunities").fetchone()[0] == 1
+
+
+def test_registry_aka_names_merge_feed_items(conn, cfg):
+    from radar import store
+    from radar.models import Item
+    from radar.pipeline import Preparer
+    prep = Preparer(make_cfg(cfg, {}))
+    registry = Item(source_item_id="wids", title="WiDS Worldwide Stanford Conference", organization="WiDS",
+                    dedupe_key="conf|wids worldwide conference|tba",
+                    extra={"alias_keys": ["conf|women in data science worldwide"]})
+    feed = Item(source_item_id="x", title="Women in Data Science (WiDS) Worldwide", organization="WiDS",
+                dedupe_key="conf|women in data science worldwide|2027")
+    store.save_items(conn, "registry", [prep.prepare(registry)], run_id=1, now="2026-11-24T18:00:00Z", deadline_method="manual")
+    store.save_items(conn, "badgeup", [prep.prepare(feed)], run_id=2, now="2026-11-24T18:00:00Z", deadline_method="structured")
+    assert conn.execute("SELECT COUNT(*) FROM opportunities").fetchone()[0] == 1
