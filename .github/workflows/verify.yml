@@ -16,6 +16,10 @@ on:
         description: "Only guess job boards for ats: unknown companies (fast)"
         type: boolean
         default: false
+      probe_urls:
+        description: "Debugging: space-separated public URLs to outline (skips everything else)"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -35,7 +39,11 @@ jobs:
         # The input goes through an environment variable (not pasted into the
         # script) so odd input can't be run as shell code.
         run: |
-          if [ "$DISCOVERY_ONLY" = "true" ]; then
+          if [ -n "$PROBE_URLS" ]; then
+            # Word splitting on purpose: one argument per URL.
+            # shellcheck disable=SC2086
+            python -m radar probe $PROBE_URLS
+          elif [ "$DISCOVERY_ONLY" = "true" ]; then
             python -m radar verify --discovery-only
           elif [ -n "$ONLY_SOURCE" ]; then
             python -m radar verify --source "$ONLY_SOURCE"
@@ -45,9 +53,11 @@ jobs:
         env:
           ONLY_SOURCE: ${{ inputs.source }}
           DISCOVERY_ONLY: ${{ inputs.discovery_only }}
+          PROBE_URLS: ${{ inputs.probe_urls }}
           USAJOBS_API_KEY: ${{ secrets.USAJOBS_API_KEY }}
           USAJOBS_EMAIL: ${{ secrets.USAJOBS_EMAIL }}
       - uses: actions/upload-artifact@v7
+        if: ${{ inputs.probe_urls == '' }}
         with:
           name: verify-report
           path: out/verify.md

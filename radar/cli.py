@@ -48,6 +48,9 @@ def main(argv: list[str] | None = None) -> int:
     p_verify.add_argument("--skip-urls", action="store_true", help="only check sources, not registry URLs")
     p_verify.add_argument("--discovery-only", action="store_true", help="only guess job boards for ats: unknown companies")
 
+    p_probe = sub.add_parser("probe", help="print the structure of public pages/feeds (debugging aid)")
+    p_probe.add_argument("urls", nargs="+")
+
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
@@ -86,6 +89,11 @@ def main(argv: list[str] | None = None) -> int:
 
         http = Http.from_config(cfg)
         return run_verify(cfg, http, only=args.source, check_urls=not args.skip_urls, discovery_only=args.discovery_only)
+
+    if args.command == "probe":
+        from radar.probe import probe
+
+        return probe(args.urls, Http.from_config(cfg))
 
     parser.print_help()
     return 1
