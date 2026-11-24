@@ -133,7 +133,9 @@ def run_source(conn, cfg: Config, http: Http, preparer: Preparer, source_id: str
     now = now_iso()
     method = "manual" if source.type_name in REGISTRY_TYPES else "structured"
     seen, new = store.save_items(conn, source_id, prepared, run_id, now, method)
-    closed, warning = store.close_missing(conn, source_id, run_id, seen, result.failed_scopes, now)
+    closed, warning = store.close_missing(
+        conn, source_id, run_id, seen, result.failed_scopes, now, keep_missing_days=options.get("keep_missing_days")
+    )
     warnings = list(result.warnings) + ([warning] if warning else [])
     if result.failed_scopes:
         warnings.append(f"{len(result.failed_scopes)} sub-feeds failed: {', '.join(sorted(result.failed_scopes))[:300]}")

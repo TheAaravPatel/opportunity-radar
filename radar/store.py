@@ -19,8 +19,11 @@ import json
 import sqlite3
 from dataclasses import dataclass
 
+from datetime import timedelta
+
 from radar.eligibility import Eligibility
 from radar.models import Item
+from radar.timeutil import parse_datetime, to_iso
 
 # If a successful fetch returns less than this share of last run's items,
 # something is probably wrong upstream: don't close anything this time.
@@ -279,6 +282,48 @@ def _upsert_deadline(conn, opp_id: int, source_id: str, d, method: str, run_id: 
     )
 
 
+UNLISTED_REASON = "No longer listed by its source"
+
+
+def _close_unlisted(conn, opp_ids: set[int], now: str) -> int:
+    """Close each opportunity that no source lists any more."""
+    closed = 0
+    for opp_id in opp_ids:
+        still_listed = conn.execute("SELECT 1 FROM sightings WHERE opportunity_id = ? AND active = 1", (opp_id,)).fetchone()
+        if not still_listed:
+            cur = conn.execute(
+                "UPDATE opportunities SET status='closed', closed_at=?, status_reason=? WHERE id=? AND status != 'closed'",
+                (now, UNLISTED_REASON, opp_id),
+            )
+            closed += cur.rowcount
+    return closed
+
+
+def _close_window_feed(conn, source_id: str, run_id: int, now: str, keep_days: float) -> int:
+    """Closing rule for feeds that only show their newest N items."""
+    cutoff = to_iso(parse_datetime(now) - timedelta(days=keep_days))
+    # Self-heal: re-activate recently seen sightings that an earlier run closed
+    # too eagerly, and re-open their opportunities.
+    revived = conn.execute(
+        "SELECT id, opportunity_id FROM sightings WHERE source_id = ? AND active = 0 AND last_seen_at >= ?",
+        (source_id, cutoff),
+    ).fetchall()
+    conn.executemany("UPDATE sightings SET active = 1 WHERE id = ?", [(r["id"],) for r in revived])
+    for r in revived:
+        conn.execute(
+            "UPDATE opportunities SET status='open', closed_at=NULL, status_reason=NULL WHERE id=? AND status='closed' AND status_reason=?",
+            (r["opportunity_id"], UNLISTED_REASON),
+        )
+    # Only items missing for longer than keep_days count as gone.
+    stale = conn.execute(
+        """SELECT id, opportunity_id FROM sightings WHERE source_id = ? AND active = 1
+           AND (last_run_id IS NULL OR last_run_id != ?) AND last_seen_at < ?""",
+        (source_id, run_id, cutoff),
+    ).fetchall()
+    conn.executemany("UPDATE sightings SET active = 0 WHERE id = ?", [(r["id"],) for r in stale])
+    return _close_unlisted(conn, {r["opportunity_id"] for r in stale}, now)
+
+
 # ---------------------------------------------------------------- baseline
 def first_ok_runs(conn) -> dict[str, int]:
     """Each source's first successful run id."""
@@ -299,8 +344,16 @@ def is_baseline(row, first_runs: dict[str, int]) -> bool:
 
 
 # ----------------------------------------------------------------- closing
-def close_missing(conn, source_id: str, run_id: int, seen: int, failed_scopes: set[str], now: str) -> tuple[int, str | None]:
-    """Close items this source no longer lists. Returns (closed count, warning)."""
+def close_missing(conn, source_id: str, run_id: int, seen: int, failed_scopes: set[str], now: str,
+                  keep_missing_days: float | None = None) -> tuple[int, str | None]:
+    """Close items this source no longer lists. Returns (closed count, warning).
+
+    keep_missing_days: for "newest N jobs" feeds (Jobs Every Hour), an item
+    dropping out of the window doesn't mean the job closed. Such items stay
+    open until they've been missing for this many days.
+    """
+    if keep_missing_days:
+        return _close_window_feed(conn, source_id, run_id, now, keep_missing_days), None
     previous = conn.execute("SELECT items_last_run FROM sources WHERE id = ?", (source_id,)).fetchone()
     previous = previous["items_last_run"] if previous else None
     if previous and previous >= SUSPICIOUS_MIN_PREVIOUS and seen < previous * SUSPICIOUS_DROP:
@@ -316,19 +369,7 @@ def close_missing(conn, source_id: str, run_id: int, seen: int, failed_scopes: s
         (source_id, run_id, *scopes),
     ).fetchall()
     conn.executemany("UPDATE sightings SET active = 0 WHERE id = ?", [(r["id"],) for r in stale])
-
-    closed = 0
-    for opp_id in {r["opportunity_id"] for r in stale}:
-        still_listed = conn.execute(
-            "SELECT 1 FROM sightings WHERE opportunity_id = ? AND active = 1", (opp_id,)
-        ).fetchone()
-        if not still_listed:
-            cur = conn.execute(
-                """UPDATE opportunities SET status='closed', closed_at=?, status_reason='No longer listed by its source'
-                   WHERE id=? AND status != 'closed'""",
-                (now, opp_id),
-            )
-            closed += cur.rowcount
+    closed = _close_unlisted(conn, {r["opportunity_id"] for r in stale}, now)
 
     # Deadlines this source no longer reports (e.g. removed from a registry YAML).
     conn.execute(

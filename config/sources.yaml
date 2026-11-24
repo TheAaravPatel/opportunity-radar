@@ -59,6 +59,9 @@ sources:
     # They ask for a link back; this line appears in the dashboard footer.
     credit: "Tech internship listings courtesy of Jobs Every Hour:"
     default_fields: [cs]
+    # The feed only lists the ~300 NEWEST jobs, so a job dropping out of it
+    # hasn't necessarily closed. Keep it open until it's been gone 21 days.
+    keep_missing_days: 21
 
   # ------------------------------------------------------- biotech / life sci ----
   biotech_repo:

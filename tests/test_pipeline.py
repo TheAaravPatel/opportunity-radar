@@ -169,3 +169,29 @@ def test_registry_aka_names_merge_feed_items(conn, cfg):
     store.save_items(conn, "registry", [prep.prepare(registry)], run_id=1, now="2026-11-24T18:00:00Z", deadline_method="manual")
     store.save_items(conn, "badgeup", [prep.prepare(feed)], run_id=2, now="2026-11-24T18:00:00Z", deadline_method="structured")
     assert conn.execute("SELECT COUNT(*) FROM opportunities").fetchone()[0] == 1
+
+
+def test_window_feed_keeps_missing_items_open_then_heals(conn, cfg, feeds, monkeypatch):
+    """Jobs Every Hour lists only its newest 300 jobs: dropping out != closed."""
+    window = {"type": "listings_json", "group": "jobs", "url": A, "default_fields": ["cs"], "keep_missing_days": 21}
+    sources = {"a": window}
+    run(conn, cfg, feeds, sources)
+    dropped = feeds[A].pop(0)
+    report = run(conn, cfg, feeds, sources)["a"]
+    assert report.closed == 0 and status_of(conn, dropped["url"])["status"] == "open"
+
+    # 22 days later it's still missing -> now it closes.
+    monkeypatch.setenv("RADAR_NOW", "2026-12-17T18:00:00Z")
+    report = run(conn, cfg, feeds, sources)["a"]
+    assert status_of(conn, dropped["url"])["status"] == "closed"
+
+
+def test_window_feed_reopens_items_closed_by_the_old_rule(conn, cfg, feeds):
+    sources = {"a": listing_source(A)}
+    run(conn, cfg, feeds, sources)
+    dropped = feeds[A].pop(0)
+    run(conn, cfg, feeds, sources)                      # old rule: closed right away
+    assert status_of(conn, dropped["url"])["status"] == "closed"
+    sources["a"] = {**sources["a"], "keep_missing_days": 21}
+    run(conn, cfg, feeds, sources)                      # new rule heals it
+    assert status_of(conn, dropped["url"])["status"] == "open"
