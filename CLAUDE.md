@@ -129,7 +129,8 @@ Use `RADAR_NOW=2027-01-05T15:00:00Z` to pretend it's another date (tests do this
   (matched, or a feed sighting merged into the card) -> open; the page says "applications are
   open" -> open (never over a hand-set "possibly discontinued"); page 404 for 7 days -> possibly
   discontinued - and records status changes for the digest's "Now open" (first run = baseline).
-  `early_career_only` boards keep only early titles or *strict* registry matches. Oracle fetcher
+  A firm's only program is NOT matched by default (Bain's CREW posting isn't BEL).
+  `early_career_only` boards keep only early titles or registry matches. Oracle fetcher
   in `ats_oracle.py` (JPMC site CX_1; Goldman's Oracle site has no campus jobs -> disabled).
 - **Schema changes**: add new columns to `ADDED_COLUMNS` in db.py so the database already on
   the data branch is upgraded in place.

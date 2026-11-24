@@ -11,8 +11,8 @@ A posting matches a program when
      ignoring "Inc.", "&", spaces...; and
   2. the title fits that program: one of its `match_titles` phrases is in the
      title, or the title shares a distinctive word with the program's name or
-     `aka` names ("Possibilities", "Ignite", "Sophomore"...), or the firm has
-     just one program and the class years don't conflict.
+     `aka` names ("Possibilities", "Ignite", "Sophomore"...). Being the firm's
+     only program isn't enough: Bain's "CREW Program" is not Bain's "BEL".
 
 Early-career postings that look like programs (an insight day, a summit...)
 but match no program become suggestions on the dashboard's Suggested tab.
@@ -77,10 +77,8 @@ class ProgramMatcher:
                 return programs
         return []
 
-    def match(self, org: str, title: str, class_years: list[str] | None = None, strict: bool = False) -> str | None:
-        """The registry id of the program this posting is for, or None.
-        strict: only explicit evidence (a match_titles phrase or a shared
-        distinctive word) - used to filter whole job boards."""
+    def match(self, org: str, title: str) -> str | None:
+        """The registry id of the program this posting is for, or None."""
         programs = self.candidates(org)
         if not programs:
             return None
@@ -94,10 +92,6 @@ class ProgramMatcher:
         best_score, best = scored[0]
         if best_score and (len(scored) == 1 or scored[1][0] < best_score):
             return best["id"]
-        if len(programs) == 1 and not best_score and not strict:
-            wanted = set(best.get("class_years") or [])
-            if not wanted or not class_years or wanted & set(class_years):
-                return best["id"]
         return None
 
 
@@ -124,7 +118,7 @@ def link_early_postings(conn, cfg, today: date) -> dict:
            WHERE early_career = 1 AND registry_id IS NULL AND status != 'closed'"""
     ).fetchall():
         class_years = json.loads(row["class_years"] or "[]")
-        program_id = matcher.match(row["organization"], row["title"], class_years)
+        program_id = matcher.match(row["organization"], row["title"])
         if program_id:
             links[program_id].append(row["id"])
         elif programish and programish.search(row["title"] or "") and row["url"]:

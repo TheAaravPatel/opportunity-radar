@@ -93,7 +93,7 @@ class AtsCompaniesSource(Source):
         relaxed = {**company, "extra_titles": [*(company.get("extra_titles") or []),
                                                *(early_words.get("strong") or []), *(early_words.get("weak") or [])]}
         found = FETCHERS[company["ats"]](relaxed, self.http)
-        return [i for i in found if detector.is_early(i.title) or matcher.match(i.organization, i.title, strict=True)]
+        return [i for i in found if detector.is_early(i.title) or matcher.match(i.organization, i.title)]
 
     def _covered_list(self) -> list[dict]:
         url = self.options.get("skip_if_covered_by")

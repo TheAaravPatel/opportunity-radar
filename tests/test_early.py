@@ -80,14 +80,13 @@ def test_oracle_fetcher_pages_and_filters():
                      "findReqs;siteNumber=CX_1,keyword=sophomore,sortBy=POSTING_DATES_DESC,offset=2"]
 
 
-def test_board_filter_needs_real_evidence(cfg):
-    # A firm with ONE registry program: its ordinary internships must not pass
-    # the early-career filter just because the firm is in the registry.
-    matcher = ProgramMatcher([{"id": "bank-fellowship", "firm": "Big Bank", "program": "Big Bank Fellowship"}])
-    title = "2027 Market Sales Analyst Internship - Summer Experience Program"
-    assert matcher.match("Big Bank", title) == "bank-fellowship"            # fine for linking flagged postings
-    assert matcher.match("Big Bank", title, strict=True) is None            # not for filtering a whole board
-    assert matcher.match("Big Bank", "Big Bank Fellowship 2027", strict=True) == "bank-fellowship"
+def test_a_firms_only_program_still_needs_real_evidence():
+    # Bain's CREW posting is not Bain's BEL program just because BEL is Bain's
+    # only registry entry (a real mismatch from the first live run).
+    matcher = ProgramMatcher([{"id": "bain-bel", "firm": "Bain & Company", "program": "Building Entrepreneurial Leaders (BEL)"}])
+    assert matcher.match("Bain & Company", "Bain & Company 2027 Connecting & Resourcing Empowered Women (CREW) Program") is None
+    assert matcher.match("Bain & Company", "Building Entrepreneurial Leaders 2027") == "bain-bel"
+    assert matcher.match("Bain & Company", "BEL 2027 - Boston") == "bain-bel"    # its acronym is distinctive
 
 
 def test_early_career_only_boards(cfg):

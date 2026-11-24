@@ -219,9 +219,9 @@ Wording found on the pages:
 | Jane Street, HRT, IMC, Optiver, DRW, Five Rings, Akuna, Jump, Tower, Point72 (Greenhouse), Old Mission (Ashby) | ✅ all answer; no early-career titles right now (their regular internships come from Simplify) |
 | Citi, Capital One, BlackRock, NVIDIA (Workday) | 🚫 Workday bot challenge from GitHub's servers (best effort; never closes items) |
 
-Lessons from the first run: a firm with a single registry program must not let all its
-internships through the early-career filter (IMC showed 22, HRT 6) - board filtering uses strict
-matching; and "Point72 Academy ... for Experienced Professionals" is excluded by the
+Lessons from the first run: being a firm's only registry program is not evidence - it let all
+of IMC's (22) and HRT's (6) internships through the board filter and linked Bain's CREW posting
+to Bain's BEL program, so a match now always needs a shared distinctive word or `match_titles`; and "Point72 Academy ... for Experienced Professionals" is excluded by the
 experienced/MBA/PhD rule. The 7 early-career flags in the existing data were all biotech false
 positives ("Internship Program: ... Drug Discovery Intern"), fixed by requiring the weak word to
 come right before the program word.
