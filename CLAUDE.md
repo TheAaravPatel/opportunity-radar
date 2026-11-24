@@ -47,6 +47,9 @@ radar/
   classify.py, eligibility.py, early_detect.py, normalize.py, timeutil.py
   dashboard/       build.py + templates/index.html.j2 + static/app.js, app.css
   digest.py + templates/digest.*.j2
+  watcher/         page-watcher: fetch.py (robots.txt, http, Playwright fallback), text.py,
+                   snapshot.py (pages/page_snapshots + diffs), deadlines.py (regex + dateparser)
+  llm.py           Claude wrapper: llm_cache, per-run caps, JSON-schema output, refusal fallback
   verify.py        live check of every source + registry URL (no DB writes)
   probe.py         outline any public URL's HTML/JSON/feed (Verify workflow `probe_urls` input)
 tests/             pytest; fixtures are real samples captured from sources
@@ -106,6 +109,16 @@ Use `RADAR_NOW=2027-01-05T15:00:00Z` to pretend it's another date (tests do this
   one Workday board), `location_map` fixes non-city locations, `skip_titles` drops off-field roles.
   Full-time post-BA RA roles are deliberately off (no `extra_titles`, predoc_fulltime disabled)
   until senior year; the post-bacc eligibility rule demotes any that slip in.
+- **Page-watcher** (`page_watcher` source, daily): checks `watched_pages.yaml` `pages` (Stanford)
+  and `job_pages` (employers with no API). It gets the DB as `self.conn` (None in Verify) to keep
+  snapshots; the first check is a silent baseline; `only_lines_matching`/`ignore_lines` decide
+  which changes count. Its Stanford items reuse the registry entry's name/org/"Stanford, CA" so
+  they merge into the registry card; found deadlines (method `regex`/`llm`, `evidence` = the
+  sentence) are scoped per page, so a page that fails keeps its dates. A date only counts right
+  after deadline words, not for offers/reports/notifications; year-less dates need the year on
+  the page (approx). Claude is asked only when a page mentions deadlines but no date matched
+  (cached by text, `max_extract_calls_per_run`). After every run `refresh_registry_statuses`
+  recomputes registry statuses from all active deadlines.
 - **Schema changes**: add new columns to `ADDED_COLUMNS` in db.py so the database already on
   the data branch is upgraded in place.
 - **Claude API** (later phases): model from `settings.yaml` (`claude-opus-5-5`), only for
@@ -133,7 +146,8 @@ Use `RADAR_NOW=2027-01-05T15:00:00Z` to pretend it's another date (tests do this
 3. ✅ Econ: PREDOC RA page, Fed Board + regional Fed (Workday), USAJobs (needs secrets), econ RSS
    blogs (Econ UG Blog, Economic Misfit), EconJobMarket (disabled), Brattle/CRA/Cornerstone/RAND +
    Workday consulting boards; no-API employers are manual links until the page-watcher
-4. ⏳ Page-watcher (snapshot/diff/Playwright, deadline extraction) for Stanford pages
+4. ✅ Page-watcher: 22 Stanford pages + 3 employer job pages (Analysis Group, Brookings, Bates White);
+   snapshot/diff, Playwright fallback, robots.txt, regex+dateparser deadlines, Claude fallback
 5. ⏳ Early-programs registry watching + keyword detection + bank/trading ATS (incl. Oracle)
 6. ✅ Conferences & hackathons (built before 3-5 at the owner's request): conferences.yaml (41), student-opportunities, BadgeUp; name+year dedupe with TBA matching and `aka` aliases
 7. ⏳ Weekly discovery (Claude + web search) + approval flow

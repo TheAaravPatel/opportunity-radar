@@ -63,6 +63,26 @@ def test_find_deadlines():
     assert find_deadlines(["Deadline: rolling. The program runs June 22 - August 28, 2027."], TODAY) == []
 
 
+def test_deadline_labels_and_non_application_dates():
+    lines = [
+        "Faculty Mentor Letter Deadline: March 8, 2027 (Mon) @ 11:59 PM (PST)",
+        "Application will open : Wednesday, December 16, 2026, at 12 am PST",
+        "Priority deadline: Jan. 4th, 2027; final deadline March 1, 2027",
+        "Apply by February 2, 2027",
+        # Real lines from Stanford pages that are NOT application dates:
+        "Deadline for candidates to accept their offer : March 13- no extensions granted (2027 cycle)",
+        "Submit a final report and donor thank-you letter: due September 20 (2027 recipients)",
+    ]
+    labels = {d.date: d.label for d in find_deadlines(lines, TODAY)}
+    assert labels == {
+        "2027-03-08": "Faculty Mentor Letter Deadline (from page)",
+        "2026-12-16": "Application will open (from page)",
+        "2027-01-04": "Priority deadline (from page)",
+        "2027-03-01": "Final deadline (from page)",
+        "2027-02-02": "Deadline (from page)",
+    }
+
+
 def test_when_to_ask_claude():
     assert worth_asking_claude(["The deadline is the second Friday of winter quarter."], [])
     assert not worth_asking_claude(["Deadline: TBA"], [])

@@ -173,3 +173,27 @@ matched the parser)**, and both registries. Of the 73 registry URLs:
 | Regional Fed `rb/FRS`, Compass Lexecon, NERA, Urban, Pew (Workday) | 🚫 bot challenge (HTTP 429) | Reported as failed sub-feeds; they never close jobs. Simplify lists many Fed roles. |
 | NBER, Analysis Group, Brookings, Bates White, Edgeworth, Mathematica | manual links | NBER's terms forbid monitoring; the others have no public job API (page-watcher later). |
 
+## Page-watcher (built 2026-11-24, checked live from GitHub Actions)
+
+All 25 watched pages loaded from GitHub's servers and none is disallowed by robots.txt. 24 are
+plain HTML; the HAI student-opportunities page is built by JavaScript and was read with the
+headless browser. The iCIMS job lists (Analysis Group, Brookings) are watched through their
+`?in_iframe=1` page, which has the job titles in plain HTML.
+
+Deadlines read off pages on the first run (dates already in the YAML aren't repeated):
+
+| Page | Found | Sentence on the page |
+|---|---|---|
+| BSURP | opens Dec 16, 2026 | "Application will open : Wednesday, December 16, 2026, at 12 am PST" |
+| VPUE Major Grant | Mar 8, 2027 | "Faculty Mentor Letter Deadline: March 8, 2027" (student deadline Mar 1 is in the YAML) |
+| Chappell Lougee | Dec 8, 2026 | "Faculty Mentor Letter Deadline: December 8, 2026" |
+| SSRP-Amgen | opened Nov 1, 2026 | "The 2026 SSRP application will open November 1, 2026." |
+
+False positives found in that run and fixed by rule: BSURP's "Deadline for candidates to accept
+their offer: March 13" and the King Center's "Submit a final report ... September 20" (dates for
+offers, notifications, reports and reimbursements are now skipped).
+
+Not watched: Edgeworth (openings load from Paylocity in a JavaScript frame) and Mathematica
+(careers site returns HTTP 403 to bots) stay manual links; CURIS, Bio-X, the Econ department page
+and the Citadel/HRT/McKinsey program pages are `watch: false` as before.
+

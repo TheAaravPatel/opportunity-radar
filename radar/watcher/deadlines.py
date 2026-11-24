@@ -44,6 +44,11 @@ AFTER_DEADLINE = re.compile(r"^\s*(?:[-–]\s*)?(?:deadline|due date|is the dead
 PRIORITY = re.compile(r"\bpriority\b", re.I)
 NOT_A_DEADLINE = re.compile(r"\b(?:posted|updated|last modified|published|copyright)\b|©", re.I)
 MENTIONS_DEADLINES = re.compile(r"\b(?:deadline|due|apply by|applications? (?:open|close|are due))\b", re.I)
+# Dates for things other than applying: accepting an offer, reports after the program...
+NOT_APPLYING = re.compile(
+    r"\b(?:accept\w*\s+(?:\w+\s+){0,2}offers?|offers?\s+(?:acceptance|decisions?)|notif\w+|decisions?\s+(?:will|are|released)"
+    r"|final report|report form|thank-?you|reimburse\w*|receipts?|evaluations?|surveys?|reflections?)\b", re.I)
+WEEKDAY = re.compile(r"\b(?:mon|tues?|wed(?:nes)?|thu(?:rs)?|fri|sat(?:ur)?|sun)(?:day)?\b\.?", re.I)
 SENTENCE_BREAK = re.compile(r";|\.\s+[A-Z]")      # "Deadline: rolling. Program June 22..." isn't one
 RANGE_SEP = re.compile(r"^\s*(?:-|–|—|to|through|until)\s*$", re.I)
 UNDECIDED = re.compile(r"\b(?:tba|tbd|to be (?:announced|determined)|rolling)\b", re.I)
@@ -51,8 +56,8 @@ UNDECIDED = re.compile(r"\b(?:tba|tbd|to be (?:announced|determined)|rolling)\b"
 MAX_GAP = 80            # characters allowed between the keyword and the date
 PAST_DAYS = 30          # keep deadlines that passed up to this many days ago
 FUTURE_DAYS = 450       # ...and ignore anything further ahead than this
-LABELS = {"application": "Deadline (found on page)", "priority": "Priority deadline (found on page)",
-          "opens": "Applications open (found on page)"}
+LABELS = {"application": "Deadline (from page)", "priority": "Priority deadline (from page)",
+          "opens": "Applications open (from page)"}
 
 
 def _parse(text: str, today: date) -> date | None:
@@ -84,6 +89,24 @@ def _kind_for(line: str, start: int, end: int) -> str | None:
     return None
 
 
+def _label(line: str, start: int, kind: str) -> str:
+    """The page's own words for this date: "Faculty Mentor Letter Deadline: March 8"
+    -> "Faculty Mentor Letter Deadline (from page)". Falls back to a generic label."""
+    clause = line[:start]
+    earlier = list(DATE.finditer(clause))
+    if earlier:
+        clause = clause[earlier[-1].end():]          # only the words after the previous date
+    clause = re.split(r"[.;|•]\s+|\s+[-–—]\s+", clause)[-1]
+    clause = WEEKDAY.sub("", clause)
+    for _ in range(2):
+        clause = re.sub(r"[\s:,\-–(@]+$", "", clause)
+        clause = re.sub(r"\s*\b(?:on|by|is|of|the|at)$", "", clause, flags=re.I)
+    clause = re.sub(r"^(?:and|or|but|with)\s+", "", clause.strip(" :,-–("), flags=re.I)
+    if len(clause.split()) < 2 or len(clause) > 70:
+        return LABELS[kind]
+    return f"{clause[0].upper()}{clause[1:]} (from page)"
+
+
 def find_deadlines(lines: list[str], today: date) -> list[Deadline]:
     page_text = "\n".join(lines)
     found: dict[tuple[str, str], Deadline] = {}
@@ -92,7 +115,7 @@ def find_deadlines(lines: list[str], today: date) -> list[Deadline]:
         range_kind: dict[int, str] = {}
         for i, match in enumerate(matches):
             kind = range_kind.get(i) or _kind_for(line, match.start(), match.end())
-            if not kind:
+            if not kind or NOT_APPLYING.search(line[max(0, match.start() - 120):match.start()]):
                 continue
             # "Applications: January 27 - February 10, 2027" is a window:
             # the first date is when they open, the second the deadline.
@@ -118,7 +141,9 @@ def find_deadlines(lines: list[str], today: date) -> list[Deadline]:
                 approx = True
             if not (today - timedelta(days=PAST_DAYS) <= day <= today + timedelta(days=FUTURE_DAYS)):
                 continue
-            label = LABELS[kind] if not approx else LABELS[kind].replace("(found", "(year assumed - found")
+            label = LABELS[kind] if i in range_kind or (i + 1) in range_kind else _label(line, match.start(), kind)
+            if approx:
+                label = label.replace("(from page)", "(from page; year assumed)")
             found.setdefault((kind, day.isoformat()), Deadline(
                 kind=kind, date=day.isoformat(), label=label, approx=approx, method="regex", evidence=line[:240]))
     return sorted(found.values(), key=lambda d: (d.date, d.kind))

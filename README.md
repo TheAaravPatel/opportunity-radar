@@ -44,7 +44,7 @@ workflow artifacts.
    | `DIGEST_TO` | where to send it (optional; defaults to `GMAIL_ADDRESS`) | email digest |
    | `USAJOBS_API_KEY` | free key from <https://developer.usajobs.gov/apirequest/> | federal student (Pathways) econ/statistics roles; until both are set the source shows "needs secret" |
    | `USAJOBS_EMAIL` | the email you registered the USAJobs key with (USAJobs requires it as the User-Agent) | USAJobs |
-   | `ANTHROPIC_API_KEY` | from <https://console.anthropic.com/> | Claude fallbacks + weekly discovery (later phases) |
+   | `ANTHROPIC_API_KEY` | from <https://console.anthropic.com/> | optional: Claude reads deadlines on pages the date rules can't (max 5 small requests a day, cached), and weekly discovery later |
 
    Anything missing just turns that feature off. Nothing else breaks.
 3. **Run it once**: **Actions → Job feeds (every 6 hours) → Run workflow**, then
@@ -158,8 +158,26 @@ Add an entry to `config/early_programs.yaml` (every field is explained at the to
 Never delete an old program: set `status_hint: possibly discontinued` instead.
 
 ### Add a Stanford page to watch
-Add an entry to `config/watched_pages.yaml` with `id`, `name`, `org`, `url`, `fields`, `type`,
-and any known `deadlines`. Use `render: playwright` for pages that need JavaScript.
+Add an entry to `config/watched_pages.yaml` under `pages:` with `id`, `name`, `org`, `url`,
+`fields`, `type`, and any known `deadlines` (all fields are explained at the top of the file).
+Every morning the **page-watcher** then:
+- loads the page (it respects robots.txt; pages built by JavaScript are opened in a headless
+  browser automatically, or set `render: playwright`)
+- compares its text with yesterday's and, if it changed, shows what changed on the Stanford tab
+  and in the email (`+` lines are new, `-` lines were removed)
+- reads deadlines off the page ("Applications are due February 1, 2027", "Application will
+  open December 16") and adds them to the program's card, the calendar and the 14/7/2-day
+  reminders. Hover a deadline on the dashboard to see the sentence it came from. Dates you write
+  in `deadlines:` yourself are always kept.
+
+If a page changes for unimportant reasons (a news box, a date stamp), add `selector: main` (or a
+narrower CSS selector) or `ignore_lines: "^Updated"`. If a page blocks bots or needs a login, set
+`watch: false` and a `watch_note`.
+
+### Watch an employer's job page (no job API)
+Add it under `job_pages:` in the same file, with `only_lines_matching` so only relevant new lines
+count, e.g. `"intern|summer|research assistant"`. New matching lines show up above the Internships
+list for that field and in the email. Analysis Group, Brookings and Bates White are set up this way.
 
 ### Add a conference, hackathon or travel scholarship
 Add an entry to `config/conferences.yaml` (all fields are explained at the top of the file):
