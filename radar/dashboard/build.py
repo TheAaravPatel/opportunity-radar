@@ -22,6 +22,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from radar import store
+from radar.sources.registries import feed_sightings
 from radar.config import Config
 from radar.eligibility import class_for_grad_year
 from radar.models import CLASS_YEARS, FIELD_LABELS
@@ -71,6 +72,7 @@ def collect_data(conn: sqlite3.Connection, cfg: Config) -> dict:
         ):
             sources_by_opp.setdefault(s["opportunity_id"], []).append(s["source_id"])
 
+    pages, postings, program_of = _registry_links(conn)
     first_runs = store.first_ok_runs(conn)
     items = []
     for r in rows:
@@ -107,6 +109,12 @@ def collect_data(conn: sqlite3.Connection, cfg: Config) -> dict:
                 "sources": sorted(set(sources_by_opp.get(r["id"], []))),
                 "deadlines": deadlines.get(r["id"], []),
                 "extra": {k: extra[k] for k in EXTRA_KEYS if k in extra},
+                # Registry cards: what the page-watcher saw on the program page,
+                # and live job postings matched to the program (early_match.py).
+                "page": pages.get(r["registry_id"]) if r["registry_id"] else None,
+                "postings": postings.get(r["registry_id"], []) if r["registry_id"] else [],
+                # Job postings: the registry program they belong to, if any.
+                "program": program_of.get(r["id"]),
             }
         )
 
@@ -128,8 +136,8 @@ def collect_data(conn: sqlite3.Connection, cfg: Config) -> dict:
         "manual_links": cfg.get("dashboard.manual_check_links", []) or [],
         "page_changes": collect_page_changes(conn),
         "watched_pages": collect_watched_pages(conn),
-        "suggestions": [dict(s) for s in conn.execute(
-            "SELECT id, kind, name, url, why, target_config, found_at FROM suggestions WHERE status = 'pending' ORDER BY found_at DESC"
+        "suggestions": [{**dict(s), "payload": _loads(s["payload"], None)} for s in conn.execute(
+            "SELECT id, kind, name, url, why, target_config, found_at, source, payload FROM suggestions WHERE status = 'pending' ORDER BY found_at DESC"
         )],
         "repo": "TheAaravPatel/opportunity-radar",
     }
@@ -178,6 +186,37 @@ def _health_state(row: dict, options: dict) -> str:
     if upstream and now_utc() - parse_datetime(upstream) > timedelta(days=STALE_UPSTREAM_DAYS):
         return "stale"
     return "ok"
+
+
+def _registry_links(conn: sqlite3.Connection) -> tuple[dict, dict, dict]:
+    """(page info by registry id, matched postings by program id, program name by posting id)."""
+    pages = {
+        p["id"]: {"last_checked": p["last_checked_at"], "last_changed": p["last_changed_at"],
+                  "signal": p["signal"], "signal_line": p["signal_line"] or "", "gone_since": p["gone_since"],
+                  "years_seen": [int(y) for y in (p["years_seen"] or "").split(",") if y],
+                  "failing": bool(p["consecutive_failures"])}
+        for p in conn.execute("SELECT * FROM pages WHERE kind != 'job_page'")
+    }
+    postings: dict[str, list] = {}
+    program_of: dict[int, str] = {}
+    # A feed listing merged into the registry card itself (same firm + title).
+    for o in conn.execute("SELECT id, registry_id, title FROM opportunities WHERE registry_id IS NOT NULL AND status != 'closed'"):
+        for g in feed_sightings(conn, o["id"]):
+            postings.setdefault(o["registry_id"], []).append({"title": o["title"], "url": g["url"] or "", "source": g["source_id"]})
+    for e in conn.execute(
+        """SELECT e.id, e.matched_opportunity_ids, o.organization || ': ' || o.title AS program_name
+           FROM early_programs e LEFT JOIN opportunities o ON o.id = e.opportunity_id"""
+    ):
+        ids = _loads(e["matched_opportunity_ids"], [])
+        if not ids:
+            continue
+        marks = ",".join("?" * len(ids))
+        for o in conn.execute(
+            f"SELECT id, title, url, primary_source, status FROM opportunities WHERE id IN ({marks}) AND status != 'closed'", ids
+        ):
+            postings.setdefault(e["id"], []).append({"title": o["title"], "url": o["url"] or "", "source": o["primary_source"]})
+            program_of[o["id"]] = e["program_name"] or e["id"]
+    return pages, postings, program_of
 
 
 def collect_page_changes(conn: sqlite3.Connection) -> list[dict]:

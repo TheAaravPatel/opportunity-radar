@@ -99,21 +99,23 @@ sources:
     name: Watched Stanford pages (config/watched_pages.yaml)
     file: watched_pages.yaml
 
-  # Checks the pages in watched_pages.yaml themselves: page-changed alerts and
-  # deadlines read off each page. Listed after stanford_pages so the
-  # registry's entry owns each card's details.
-  page_watcher:
-    type: page_watcher
-    group: daily
-    name: Page-watcher (Stanford pages + employer job pages)
-    homepage: https://github.com/TheAaravPatel/opportunity-radar/blob/HEAD/config/watched_pages.yaml
-    file: watched_pages.yaml
-
   early_programs:
     type: early_programs_registry
     group: [jobs, daily]
     name: Early-career program registry (config/early_programs.yaml)
     file: early_programs.yaml
+
+  # Checks the pages behind both registries (and the employer job pages):
+  # page-changed alerts, deadlines and "applications are open" read off each
+  # page. Must stay AFTER stanford_pages and early_programs, so the registry
+  # entries own each card's details.
+  page_watcher:
+    type: page_watcher
+    group: daily
+    name: Page-watcher (Stanford, early-program and employer job pages)
+    homepage: https://github.com/TheAaravPatel/opportunity-radar/blob/HEAD/config/watched_pages.yaml
+    file: watched_pages.yaml
+    programs_file: early_programs.yaml
 
   # ------------------------------------------- conferences, hackathons, scholarships ----
   # The registry is listed first so that when the same conference also comes
@@ -158,6 +160,14 @@ sources:
     homepage: https://www.predoc.org/opportunities
     url: https://www.predoc.org/opportunities
     fields: [econ]
+
+  # Banks, trading firms and tech companies with early-career programs: only
+  # their freshman/sophomore postings (their regular internships come from Simplify).
+  early_career_companies:
+    type: ats_companies
+    group: jobs
+    name: Bank, trading & tech early-career boards (config/companies.yaml)
+    groups: [early-career]
 
   econ_companies:
     type: ats_companies

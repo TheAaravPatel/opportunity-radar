@@ -18,6 +18,7 @@ from radar import store
 from radar.classify import FieldClassifier
 from radar.config import Config
 from radar.early_detect import EarlyCareerDetector
+from radar.early_match import link_early_postings
 from radar.eligibility import EligibilityScorer
 from radar.http import Http
 from radar.models import Item
@@ -117,8 +118,10 @@ def run_group(conn: sqlite3.Connection, cfg: Config, http: Http, group: str | No
         report = run_source(conn, cfg, http, preparer, source_id, options)
         log.info(report.summary())
         reports.append(report)
-    # Registry statuses ("open", "closed"...) also depend on deadlines other
-    # sources found - e.g. a date the page-watcher read on the program's page.
+    # Link early-career postings to registry programs, then recompute registry
+    # statuses ("open", "closed"...) from everything the sources found - e.g.
+    # a date the page-watcher read on the program's page, or a live posting.
+    link_early_postings(conn, cfg, today_local())
     refresh_registry_statuses(conn, today_local())
     conn.commit()
     return reports

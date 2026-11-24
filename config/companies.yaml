@@ -243,6 +243,7 @@ companies:
     group: early-career
     fields: [cs, econ]
     early_career_only: true
+    search: [sophomore, freshman, summit]   # Workday searches by keyword - "intern" would miss summits
 
   - name: BlackRock
     ats: workday
@@ -261,22 +262,30 @@ companies:
     group: early-career
     fields: [cs]
     early_career_only: true
+    search: [ignite, freshman, sophomore]
 
   - name: JPMorganChase
     ats: oracle
     host: jpmc.fa.oraclecloud.com
-    site: CX_1001
+    site: CX_1                  # checked 2026-11-24 (CX_1001 is an older site)
     group: early-career
     fields: [econ, cs]
     early_career_only: true
+    # Oracle's keyword search also matches descriptions; titles are filtered after.
+    search: [sophomore, freshman, insight, fellowship]
 
   - name: Goldman Sachs
     ats: oracle
     host: hdpc.fa.us2.oraclecloud.com
-    site: CampusHiring
+    site: CX_1
     group: early-career
     fields: [econ, cs]
     early_career_only: true
+    enabled: false
+    notes: >-
+      Its Oracle site lists experienced hires only (0 "intern" postings on
+      2026-11-24); campus programs are on higher.gs.com, so the page-watcher
+      watches Goldman's program pages (early_programs.yaml) instead.
 
   - {name: Jane Street, ats: greenhouse, slug: janestreet, group: early-career, fields: [cs, econ], early_career_only: true}
   - {name: Hudson River Trading, ats: greenhouse, slug: wehrtyou, group: early-career, fields: [cs, econ], early_career_only: true}

@@ -27,7 +27,10 @@ Usually opens in {{ x.opens_month }} (~2 weeks): {{ x.title }} - {{ x.org }}  {{
 {% for x in d.new_early_postings %}
 New early-career posting: {{ x.title }} - {{ x.org }}  {{ x.url }}
 {% endfor %}
-{% if not (d.early_opening or d.early_closing or d.early_warnings or d.new_early_postings) %}
+{% for x in d.early_now_open %}
+Now open: {{ x.title }} - {{ x.org }}  {{ x.url }}{% if x.status_reason %} ({{ x.status_reason }}){% endif %}
+{% endfor %}
+{% if not (d.early_opening or d.early_closing or d.early_warnings or d.new_early_postings or d.early_now_open) %}
 Nothing this week.
 {% endif %}
 

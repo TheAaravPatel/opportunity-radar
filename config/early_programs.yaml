@@ -15,6 +15,10 @@
 #   firm                organization that runs the program
 #   program             official program name (update if it gets renamed)
 #   aka                 other / former names (also used to match job postings)
+#   match_orgs          other company names job feeds use for the firm ("HRT")
+#   match_titles        phrases that mark a job posting as THIS program
+#                       ("early id"). Usually not needed: postings are matched
+#                       by firm + distinctive words of the program name / aka.
 #   type                "early-career program" (default) or "pipeline program"
 #   fields              any of: cs, econ, biotech   (econ = econ / finance / consulting)
 #   class_years         who can apply, using your CURRENT year at application time:
@@ -23,7 +27,10 @@
 #   format              insight day | summit | virtual series | paid summer |
 #                       fellowship | conference | membership
 #   location            where it happens ("virtual" if online)
-#   url                 official program page. The page-watcher checks it daily.
+#   url                 official program page. The page-watcher checks it daily:
+#                       dates on the page, "applications are now open" wording,
+#                       and whether the page has disappeared (HTTP 404 for a
+#                       week -> "possibly discontinued").
 #   typical_open_month  1-12: month applications usually open (estimates are fine).
 #                       Drives the "expected soon" status and the digest's
 #                       "usually opens in 2 weeks" warning.
@@ -102,6 +109,7 @@ programs:
     last_verified: 2026-11-24 verified-search (official page)
 
   - id: citi-early-id
+    match_titles: ["early id", "early identification"]
     location: virtual
     firm: Citi
     program: Early ID Program
@@ -411,6 +419,7 @@ programs:
     last_verified: 2026-11-24 verified-search (PracHub)
 
   - id: inside-hrt
+    match_orgs: [HRT]
     firm: Hudson River Trading
     program: Inside HRT
     fields: [cs, econ]
@@ -452,6 +461,7 @@ programs:
     last_verified: 2026-11-24 verified-search (official page)
 
   - id: sig-discovery
+    match_orgs: [SIG, Susquehanna]
     location: virtual
     firm: Susquehanna International Group (SIG)
     program: Discovery programs
@@ -482,6 +492,7 @@ programs:
     last_verified: 2026-11-24 verified-search
 
   - id: capital-one-early-internship
+    match_titles: ["early internship"]
     location: McLean, VA
     firm: Capital One
     program: Early Internship Program

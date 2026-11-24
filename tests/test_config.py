@@ -57,6 +57,20 @@ def test_watched_pages(cfg):
                 re.compile(p[key])   # a broken regex would make the watcher fail every day
 
 
+def test_page_watcher_runs_after_the_registries(cfg):
+    # The registries must create each card first, so they own its details.
+    order = list(cfg.sources)
+    assert order.index("page_watcher") > max(order.index("stanford_pages"), order.index("early_programs"))
+
+
+def test_page_ids_unique_across_registries(cfg):
+    pages = cfg.load_file("watched_pages.yaml")
+    ids = [e["id"] for e in (pages["pages"] + (pages.get("job_pages") or [])
+                             + cfg.load_file("early_programs.yaml")["programs"])]
+    duplicates = sorted({i for i in ids if ids.count(i) > 1})
+    assert not duplicates, f"the page-watcher keys pages by id: {duplicates}"
+
+
 def test_companies(cfg):
     valid_ats = {"greenhouse", "lever", "ashby", "workday", "oracle", "unknown"}
     for c in cfg.companies:

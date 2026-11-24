@@ -11,15 +11,22 @@ sources.yaml picks which companies via `groups` (biotech / econ / early-career):
 Each company is its own "scope": if one company's board fails, only that
 company is marked failed, and its existing jobs are NOT closed. The source as
 a whole only fails if every company failed.
+
+`early_career_only: true` (banks, trading firms) keeps just the postings for
+first- and second-years: titles with early-career words ("Sophomore",
+"Insight Day"...) or ones that match a program in early_programs.yaml.
+The firms' regular internships already come from SimplifyJobs.
 """
 
 from __future__ import annotations
 
 import logging
 
+from radar.early_detect import EarlyCareerDetector
+from radar.early_match import ProgramMatcher
 from radar.models import FetchResult
 from radar.normalize import normalize_org
-from radar.sources import ats_ashby, ats_greenhouse, ats_lever, ats_workday
+from radar.sources import ats_ashby, ats_greenhouse, ats_lever, ats_oracle, ats_workday
 from radar.sources.base import Source, register
 
 log = logging.getLogger(__name__)
@@ -29,6 +36,7 @@ FETCHERS = {
     "lever": ats_lever.fetch_company,
     "ashby": ats_ashby.fetch_company,
     "workday": ats_workday.fetch_company,
+    "oracle": ats_oracle.fetch_company,
 }
 
 
@@ -61,7 +69,10 @@ class AtsCompaniesSource(Source):
                 continue
             attempted += 1
             try:
-                found = FETCHERS[company["ats"]](company, self.http)
+                if company.get("early_career_only"):
+                    found = self._early_only(company)
+                else:
+                    found = FETCHERS[company["ats"]](company, self.http)
                 items.extend(found)
                 log.info("%s (%s): %d student postings", company["name"], company["ats"], len(found))
             except Exception as exc:  # noqa: BLE001 - one board must not stop the rest
@@ -71,6 +82,18 @@ class AtsCompaniesSource(Source):
         if attempted and len(failed) == attempted:
             raise RuntimeError(f"all {attempted} company boards failed; first: {warnings[-1] if warnings else '?'}")
         return FetchResult(items=items, failed_scopes=failed, warnings=warnings)
+
+    def _early_only(self, company: dict) -> list:
+        """Fetch with a generous title filter, then keep only early-career postings."""
+        detector = EarlyCareerDetector(self.cfg.keywords)
+        matcher = ProgramMatcher((self.cfg.load_file("early_programs.yaml") or {}).get("programs") or [])
+        early_words = self.cfg.keywords.get("early_career", {}) or {}
+        # Let titles like "Freshman Discovery Program" (no "intern") through the
+        # board's student-title filter; the exact check happens below.
+        relaxed = {**company, "extra_titles": [*(company.get("extra_titles") or []),
+                                               *(early_words.get("strong") or []), *(early_words.get("weak") or [])]}
+        found = FETCHERS[company["ats"]](relaxed, self.http)
+        return [i for i in found if detector.is_early(i.title) or matcher.match(i.organization, i.title, i.class_years)]
 
     def _covered_list(self) -> list[dict]:
         url = self.options.get("skip_if_covered_by")

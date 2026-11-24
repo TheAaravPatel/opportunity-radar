@@ -80,7 +80,8 @@ def save_page_info(conn, page_id: str, entry: dict, kind: str) -> None:
 
 
 def record_check(conn, page_id: str, lines: list[str], now: str, status: int, method: str,
-                 only: str | None = None, ignore: str | None = None) -> list[str] | None:
+                 only: str | None = None, ignore: str | None = None,
+                 signal: tuple[str | None, str] = (None, ""), years: list[int] | None = None) -> list[str] | None:
     """Store this check. Returns the diff if the page changed meaningfully,
     [] if it didn't, and None the first time (that snapshot is the baseline)."""
     page = load_page(conn, page_id)
@@ -108,17 +109,22 @@ def record_check(conn, page_id: str, lines: list[str], now: str, status: int, me
         )
     conn.execute(
         """UPDATE pages SET last_checked_at=?, last_status=?, content_hash=?, consecutive_failures=0,
-               last_error=NULL, fetch_method=?, text_chars=?,
+               last_error=NULL, fetch_method=?, text_chars=?, gone_since=NULL,
+               signal=?, signal_line=?, years_seen=?,
                last_changed_at=CASE WHEN ? THEN ? ELSE last_changed_at END
            WHERE id=?""",
-        (now, status, new_hash, method, sum(len(line) for line in lines), int(bool(diff)), now, page_id),
+        (now, status, new_hash, method, sum(len(line) for line in lines), signal[0], signal[1] or None,
+         ",".join(str(y) for y in years or []), int(bool(diff)), now, page_id),
     )
     return diff
 
 
-def record_failure(conn, page_id: str, now: str, error: str) -> None:
+def record_failure(conn, page_id: str, now: str, error: str, gone: bool = False) -> None:
+    """`gone`: the page answered 404/410 - after a week the program counts as
+    possibly discontinued (see refresh_registry_statuses)."""
     conn.execute(
-        """UPDATE pages SET last_checked_at=?, last_error=?, consecutive_failures=consecutive_failures + 1
+        """UPDATE pages SET last_checked_at=?, last_error=?, consecutive_failures=consecutive_failures + 1,
+               gone_since=CASE WHEN ? THEN COALESCE(gone_since, ?) ELSE NULL END
            WHERE id=?""",
-        (now, error[:500], page_id),
+        (now, error[:500], int(gone), now, page_id),
     )

@@ -58,6 +58,7 @@ class Digest:
     early_warnings: list[dict] = field(default_factory=list)
     early_unreported: list[dict] = field(default_factory=list)   # opening/closing items not emailed yet
     new_early_postings: list[dict] = field(default_factory=list)
+    early_now_open: list[dict] = field(default_factory=list)   # registry programs that became open since the last digest
     new_by_field: dict[str, list[dict]] = field(default_factory=dict)
     new_counts: dict[str, int] = field(default_factory=dict)
     new_conferences: list[dict] = field(default_factory=list)
@@ -76,7 +77,8 @@ class Digest:
     @property
     def should_send(self) -> bool:
         return bool(
-            self.new_total or self.reminders or self.early_unreported or self.early_warnings or self.page_changes or self.newly_failed or self.first_digest
+            self.new_total or self.reminders or self.early_unreported or self.early_warnings or self.early_now_open
+            or self.page_changes or self.newly_failed or self.first_digest
         )
 
     def subject(self) -> str:
@@ -88,7 +90,7 @@ class Digest:
             parts.append(f"{len(soon)} due this week")
         if self.new_total:
             parts.append(f"{self.new_total} new")
-        if self.early_warnings or self.early_opening:
+        if self.early_warnings or self.early_opening or self.early_now_open:
             parts.append("programs opening")
         summary = ", ".join(parts) or "daily digest"
         return f"Opportunity Radar - {summary} ({self.today:%b} {self.today.day})"
@@ -204,6 +206,17 @@ def build_digest(conn: sqlite3.Connection, cfg: Config) -> Digest:
             item["opens_month"] = f"{month_start:%B}"
             item["warn_key"] = f"warned:{item['registry_id']}:{start}"
             digest.early_warnings.append(item)
+
+    # Programs that turned "open" since the last digest - a posting went live or
+    # the program page says applications are open (see refresh_registry_statuses).
+    changed_since = last or (today - timedelta(days=1)).isoformat()
+    for r in conn.execute(
+        """SELECT o.* FROM early_programs e JOIN opportunities o ON o.id = e.opportunity_id
+           WHERE e.status = 'open' AND e.last_status_change_at > ? AND o.status = 'open'""",
+        (changed_since,),
+    ):
+        if travel_fits(r, allow_partial):
+            digest.early_now_open.append(_item(r))
 
     # 3 + 4. New since last digest --------------------------------------------
     first_runs = store.first_ok_runs(conn)

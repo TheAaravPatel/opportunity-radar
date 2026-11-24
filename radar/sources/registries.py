@@ -21,11 +21,11 @@ from __future__ import annotations
 
 import calendar
 import json
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from radar.models import Deadline, FetchResult, Item
 from radar.sources.base import Source, register
-from radar.timeutil import to_date_str, today_local
+from radar.timeutil import now_utc, to_date_str, today_local
 
 EARLY_WINDOW_DAYS = 14   # "expected soon" starts this many days before the typical month
 STALE_REASON = "Page looks out of date - check it before relying on it"
@@ -125,23 +125,38 @@ def _watch_extra(entry: dict) -> dict:
     return {"watch": False, "watch_note": entry.get("watch_note", "")}
 
 
-def refresh_registry_statuses(conn, today: date) -> int:
-    """Recompute registry rows' status from ALL their active deadlines.
+GONE_DAYS = 7   # a program page that 404s this long counts as possibly discontinued
 
-    The registry sources only know the dates written in the YAML; the
-    page-watcher may have found more on the program's page. Same rules as
-    registry_status(). Returns how many rows changed.
+
+def refresh_registry_statuses(conn, today: date) -> int:
+    """Recompute every registry card's status from everything we know.
+
+    The registry sources only know what the YAML says. On top of that:
+      * deadlines other sources found (the page-watcher reads them off pages)
+      * a live job posting for the program: matched to it (radar/early_match.py),
+        or merged into its card by dedupe (same firm + title)            -> open
+      * the program page says "applications are now open"               -> open
+      * the program page has been gone (HTTP 404) for a week -> possibly discontinued
+    Known dates always win: a program with an upcoming deadline stays "open".
+    Status changes of early programs are recorded in the early_programs table
+    (the digest's "now open" list). Returns how many cards changed.
     """
     from radar.store import UNLISTED_REASON   # (imported here to avoid an import loop)
 
     rows = conn.execute(
-        f"""SELECT o.id, o.status, o.status_reason, o.extra FROM opportunities o
+        f"""SELECT o.id, o.registry_id, o.status, o.status_reason, o.extra, s.type AS registry_type,
+                   p.signal, p.signal_line, p.gone_since,
+                   e.matched_opportunity_ids, e.status AS recorded_status
+            FROM opportunities o
             JOIN sources s ON s.id = o.primary_source
+            LEFT JOIN pages p ON p.id = o.registry_id
+            LEFT JOIN early_programs e ON e.id = o.registry_id
             WHERE s.type IN ({", ".join("?" * len(REGISTRY_SOURCE_TYPES))})
               AND (o.status_reason IS NULL OR o.status_reason != ?)""",
         (*REGISTRY_SOURCE_TYPES, UNLISTED_REASON),
     ).fetchall()
     changed = 0
+    now = now_utc()
     for row in rows:
         extra = json.loads(row["extra"] or "{}")
         deadlines = [Deadline(kind=d["kind"], date=d["date"]) for d in conn.execute(
@@ -151,12 +166,56 @@ def refresh_registry_statuses(conn, today: date) -> int:
         status, reason = registry_status(entry, deadlines, today)
         if extra.get("stale") and status == "open":
             reason = STALE_REASON
+        status, reason = _apply_clues(conn, row, status, reason, now)
         if (status, reason) != (row["status"], row["status_reason"]):
             closed_at = "closed_at" if status == "closed" else "NULL"
             conn.execute(f"UPDATE opportunities SET status = ?, status_reason = ?, closed_at = {closed_at} WHERE id = ?",
                          (status, reason, row["id"]))
             changed += 1
+        if row["registry_type"] == "early_programs_registry" and row["recorded_status"] != status:
+            # The first time we only record the status (a baseline, not a change).
+            conn.execute(
+                """INSERT INTO early_programs (id, opportunity_id, status, status_reason, last_status_change_at)
+                   VALUES (?, ?, ?, ?, NULL)
+                   ON CONFLICT(id) DO UPDATE SET status = excluded.status, status_reason = excluded.status_reason,
+                       last_status_change_at = CASE WHEN early_programs.status IS NULL THEN NULL ELSE ? END""",
+                (row["registry_id"], row["id"], status, reason, now.strftime("%Y-%m-%dT%H:%M:%SZ")),
+            )
     return changed
+
+
+def feed_sightings(conn, opp_id: int) -> list:
+    """Job feeds (not registries, not the page-watcher) currently listing this card."""
+    return conn.execute(
+        f"""SELECT g.source_id, g.url FROM sightings g JOIN sources s ON s.id = g.source_id
+            WHERE g.opportunity_id = ? AND g.active = 1
+              AND s.type NOT IN ({", ".join("?" * len(REGISTRY_SOURCE_TYPES))}, 'page_watcher', 'conferences_registry')""",
+        (opp_id, *REGISTRY_SOURCE_TYPES),
+    ).fetchall()
+
+
+def _apply_clues(conn, row, status: str, reason: str, now: datetime) -> tuple[str, str]:
+    if status in ("open", "opening soon"):
+        return status, reason
+    merged = feed_sightings(conn, row["id"])
+    if merged:
+        return "open", f"Posting is live (listed by {merged[0]['source_id']})"
+    matched = json.loads(row["matched_opportunity_ids"] or "[]")
+    if matched:
+        marks = ",".join("?" * len(matched))
+        live = conn.execute(
+            f"SELECT title FROM opportunities WHERE id IN ({marks}) AND status != 'closed' ORDER BY first_seen_at DESC LIMIT 1",
+            matched,
+        ).fetchone()
+        if live:
+            return "open", f"Posting is live: {live['title']}"
+    if row["signal"] == "open":
+        return "open", f'The program page says applications are open: "{row["signal_line"]}"'
+    if row["gone_since"]:
+        since = datetime.fromisoformat(row["gone_since"].replace("Z", "+00:00"))
+        if now - since >= timedelta(days=GONE_DAYS):
+            return "possibly discontinued", f"The program page has been gone (HTTP 404) since {_fmt(since.date().isoformat())}"
+    return status, reason
 
 
 @register("early_programs_registry")

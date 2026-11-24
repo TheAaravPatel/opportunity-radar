@@ -315,12 +315,31 @@ function whyDetails(it) {
       el("span", { class: r.points >= 0 ? "plus" : "minus", text: (r.points >= 0 ? "+" : "") + r.points }), " ", r.reason))));
 }
 
+// What the page-watcher noticed on a registry program's own page.
+function pageChips(it) {
+  const p = it.page;
+  if (!p) return [];
+  const out = [];
+  if (p.gone_since) out.push(el("span", { class: "chip warn", text: `page gone since ${fmtDate(p.gone_since.slice(0, 10))}` }));
+  else if (p.failing) out.push(el("span", { class: "chip warn", text: "page check failing" }));
+  if (p.last_changed && hoursSince(p.last_changed) <= 24 * 14) out.push(el("span", { class: "chip new", text: `page updated ${ago(p.last_changed)}` }));
+  if (p.signal === "open") out.push(el("span", { class: "chip new", title: p.signal_line, text: "page says: open" }));
+  if (p.signal === "closed") out.push(el("span", { class: "chip", title: p.signal_line, text: "page says: closed" }));
+  const thisYear = Number(TODAY.slice(0, 4));
+  if (p.last_checked && !it.extra.stale && !p.years_seen.some((y) => y >= thisYear)) {
+    out.push(el("span", { class: "chip warn", title: "The page mentions no dates from this year or next", text: `page shows no ${thisYear}/${thisYear + 1} dates` }));
+  }
+  return out;
+}
+
 function card(it) {
   const chips = [statusChip(it)];
   if (isNew(it, 24)) chips.push(el("span", { class: "chip new", text: "new" }));
   else if (isNew(it, 24 * 7)) chips.push(el("span", { class: "chip new", text: "this week" }));
   if (it.extra.stale) chips.push(el("span", { class: "chip warn", text: "page may be stale" }));
   if (it.extra.watch === false) chips.push(el("span", { class: "chip", title: it.extra.watch_note || "", text: "not auto-checked" }));
+  chips.push(...pageChips(it));
+  if (it.program) chips.push(el("span", { class: "chip new", title: "This posting matches a program in the early-program registry", text: `part of ${it.program}` }));
 
   const meta = [];
   it.fields.forEach((f) => meta.push(el("span", { class: "chip field", text: f })));
@@ -364,6 +383,8 @@ function card(it) {
       ? el("div", { class: "card-reason", text: `Travel: ${it.travel_reason}` }) : null,
     deadlineLine(it),
     showReason ? el("div", { class: "card-reason", text: it.status_reason }) : null,
+    it.postings && it.postings.length ? el("div", { class: "card-reason" }, "Live posting: ",
+      ...it.postings.slice(0, 3).flatMap((p, i) => [i ? " · " : "", link(p.title, p.url), ` (via ${p.source})`])) : null,
     it.extra.notes ? el("details", { class: "why" }, el("summary", { text: "Notes" }), el("p", { text: it.extra.notes })) : null,
     whyDetails(it),
     el("div", { class: "card-foot" }, foot.map((t) => el("span", { text: t }))));
@@ -546,11 +567,20 @@ function conferenceIntro() {
 
 function suggestedView() {
   const list = DATA.suggestions || [];
-  if (!list.length) return el("div", { class: "empty", text: "No suggestions waiting. The weekly discovery job will add new programs and conferences here for you to approve." });
+  if (!list.length) return el("div", { class: "empty", text: "No suggestions waiting. Early-career postings that look like programs but aren't in the registry show up here (and, later, the weekly discovery job's finds)." });
   return el("div", { class: "cards" }, list.map((s) => el("article", { class: "card" },
     el("h3", { class: "card-title" }, link(s.name, s.url)),
-    el("div", { class: "card-org", text: `${s.kind} · found ${ago(s.found_at)} · would go in ${s.target_config || "config"}` }),
-    s.why ? el("p", { class: "card-reason", text: s.why }) : null)));
+    el("div", { class: "card-org", text: `${s.kind.replace("_", " ")} · found ${ago(s.found_at)} · would go in ${s.target_config || "config"}` }),
+    s.why ? el("p", { class: "card-reason", text: s.why }) : null,
+    s.payload ? el("details", { class: "why" }, el("summary", { text: "Draft entry to paste into the YAML" }),
+      el("pre", { class: "diff", text: yamlEntry(s.payload) })) : null)));
+}
+
+// {id: "x", fields: ["econ"]} -> "  - id: x\n    fields: [econ]" (edit before pasting)
+function yamlEntry(obj) {
+  const value = (v) => Array.isArray(v) ? `[${v.join(", ")}]` : (/[:#]/.test(String(v)) ? JSON.stringify(String(v)) : String(v));
+  return Object.entries(obj).filter(([, v]) => v !== null && v !== "" && !(Array.isArray(v) && !v.length))
+    .map(([k, v], i) => `${i ? "    " : "  - "}${k}: ${value(v)}`).join("\n");
 }
 
 function sourcesView() {
