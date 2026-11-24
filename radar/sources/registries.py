@@ -105,6 +105,16 @@ def _window_extra(entry: dict, today: date) -> dict:
     return {"typical_open_month": int(month), "expected_open_start": start.isoformat(), "expected_open_end": end.isoformat()}
 
 
+def _travel_extra(entry: dict) -> dict:
+    """Hand-checked `travel_covered: full | partial | none` (+ optional travel_note)."""
+    out = {}
+    if entry.get("travel_covered"):
+        out["travel_covered"] = str(entry["travel_covered"]).lower()
+    if entry.get("travel_note"):
+        out["travel_note"] = entry["travel_note"]
+    return out
+
+
 def _watch_extra(entry: dict) -> dict:
     """`watch: false` entries are skipped by the page-watcher (bot-blocked or login-only)."""
     if entry.get("watch", True):
@@ -149,6 +159,7 @@ def early_program_items(programs: list[dict], today: date) -> list[Item]:
                     "status_hint": entry.get("status_hint", ""),
                     "last_verified": str(entry.get("last_verified", "")),
                     **_watch_extra(entry),
+                    **_travel_extra(entry),
                     **_window_extra(entry, today),
                 },
             )
@@ -192,6 +203,7 @@ def watched_page_items(pages: list[dict], today: date) -> list[Item]:
                     "render": entry.get("render", "auto"),
                     "stanford": True,
                     **_watch_extra(entry),
+                    **_travel_extra(entry),
                     **_window_extra(entry, today),
                 },
             )
@@ -250,6 +262,7 @@ def conference_registry_items(entries: list[dict], today: date) -> list[Item]:
             dedupe_name=entry.get("key_name", "") or "",
         )
         item.extra.update(_watch_extra(entry))
+        item.extra.update(_travel_extra(entry))
         item.extra["last_verified"] = str(entry.get("last_verified", ""))
         # Other names feeds use for this event (see conference_aliases in db.py).
         item.extra["alias_keys"] = [f"conf|{key_name(a)}" for a in entry.get("aka") or []]

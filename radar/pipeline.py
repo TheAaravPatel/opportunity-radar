@@ -19,7 +19,8 @@ from radar.early_detect import EarlyCareerDetector
 from radar.eligibility import EligibilityScorer
 from radar.http import Http
 from radar.models import Item
-from radar.normalize import cities_of, dedupe_key, display_location, is_bay_area, match_key
+from radar.normalize import cities_of, dedupe_key, display_location, is_bay_area, is_chicagoland, match_key
+from radar.travel import TravelClassifier
 from radar.sources import build_source
 from radar.timeutil import now_iso, today_local
 
@@ -53,6 +54,8 @@ class Preparer:
         self.classifier = FieldClassifier(cfg.keywords)
         self.scorer = EligibilityScorer(cfg.keywords, cfg.grad_year)
         self.early = EarlyCareerDetector(cfg.keywords)
+        self.travel = TravelClassifier(cfg.keywords, allow_remote=bool(cfg.get("travel.allow_remote", True)))
+        self.home_regions = set(cfg.get("travel.home_regions", ["bay_area", "chicagoland"]) or [])
         self.today = today_local()
 
     def prepare(self, item: Item) -> store.Prepared:
@@ -64,6 +67,9 @@ class Preparer:
         title_hit = self.early.is_early(item.title)
         upper_years_only = bool(eligibility.class_years) and set(eligibility.class_years) <= {"junior", "senior"}
         early = item.type in EARLY_TYPES or (title_hit and not upper_years_only)
+        bay, chicago = is_bay_area(item.locations), is_chicagoland(item.locations)
+        region = next((r for r, here in (("bay_area", bay), ("chicagoland", chicago)) if here and r in self.home_regions), None)
+        travel, travel_reason = self.travel.classify(item, region, item.remote)
         return store.Prepared(
             item=item,
             fields=fields,
@@ -75,7 +81,10 @@ class Preparer:
             match_key=item.dedupe_key or match_key(item.organization, item.title),
             cities=cities_of(item.locations),
             location=display_location(item.locations),
-            bay_area=is_bay_area(item.locations),
+            bay_area=bay,
+            chicagoland=chicago,
+            travel=travel,
+            travel_reason=travel_reason,
         )
 
 

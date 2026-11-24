@@ -45,6 +45,9 @@ class Prepared:
     cities: list[str]
     location: str
     bay_area: bool
+    chicagoland: bool = False
+    travel: str = ""
+    travel_reason: str = ""
 
 
 def _json(value) -> str:
@@ -158,6 +161,9 @@ def _row_values(p: Prepared, now: str) -> dict:
         "cities": _json(p.cities),
         "remote": int(item.remote),
         "bay_area": int(p.bay_area),
+        "chicagoland": int(p.chicagoland),
+        "travel": p.travel or None,
+        "travel_reason": p.travel_reason or None,
         "url": item.url,
         "posted_at": item.posted_at,
         "status": item.status or "open",

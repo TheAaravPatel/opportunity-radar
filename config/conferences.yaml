@@ -28,6 +28,9 @@
 #                       kind: scholarship | abstract | registration | application | opens
 #   status_hint         active | cancelled | possibly discontinued
 #   notes               anything else
+#   travel_covered      full | partial | none - do they pay for housing AND travel?
+#                       (your rule: outside the Bay Area/Chicagoland, only 'full' fits)
+#   travel_note         what exactly is covered
 #   watch, watch_note   false -> page-watcher skips it (blocks bots / login)
 #   last_verified       when/how this entry was checked
 # =============================================================================
@@ -36,6 +39,8 @@ conferences:
 
   # ======================================================= CS / computing ====
   - id: tapia
+    travel_covered: full
+    travel_note: "Scholarship covers registration, up to $600 travel and 3 hotel nights"
     name: CMD-IT/ACM Richard Tapia Celebration of Diversity in Computing
     key_name: richard tapia celebration of diversity in computing
     type: conference
@@ -68,6 +73,8 @@ conferences:
     last_verified: 2026-11-24 verified-search (AnitaB.org press release)
 
   - id: acm-w-conference-scholarships
+    travel_covered: partial
+    travel_note: "Up to $600 ($1,200 intercontinental) toward travel; housing not guaranteed"
     name: ACM-W Scholarships for Attendance at Research Conferences
     type: travel scholarship
     fields: [cs]
@@ -84,6 +91,8 @@ conferences:
     last_verified: 2026-11-24 verified-search (official page)
 
   - id: sigcse-ts
+    travel_covered: partial
+    travel_note: "Only via the ACM-W travel scholarship (up to $600)"
     name: SIGCSE Technical Symposium
     type: conference
     fields: [cs]
@@ -108,6 +117,8 @@ conferences:
     last_verified: 2026-11-24 verified-search (official 2027 site)
 
   - id: nsbe-convention
+    travel_covered: none
+    travel_note: "No national travel scholarship; some chapters fund members"
     name: NSBE Annual Convention
     key_name: nsbe annual convention
     type: conference
@@ -127,6 +138,8 @@ conferences:
     last_verified: 2026-11-24 verified-search (official rate sheet)
 
   - id: shpe-convention
+    travel_covered: none
+    travel_note: "No national travel scholarship; many chapters fund delegations"
     name: SHPE National Convention
     type: conference
     fields: [cs]
@@ -165,6 +178,8 @@ conferences:
     last_verified: 2026-11-24 verified-search
 
   - id: afrotech
+    travel_covered: none
+    travel_note: "Student scholarship retired; you pay travel + hotel"
     name: AfroTech Conference
     type: conference
     fields: [cs]
@@ -311,6 +326,8 @@ conferences:
 
   # ================================================== biotech / life sciences =
   - id: abrcms
+    travel_covered: full
+    travel_note: "Travel awards cover registration, shared housing and travel (first-time presenters; limited)"
     name: ABRCMS (Annual Biomedical Research Conference for Minoritized Scientists)
     key_name: abrcms
     type: conference
@@ -328,6 +345,8 @@ conferences:
     last_verified: 2026-11-24 verified-search (official travel-award page)
 
   - id: sacnas
+    travel_covered: full
+    travel_note: "Travel scholarships cover travel, lodging and/or registration"
     name: SACNAS Annual Conference
     key_name: sacnas national diversity in stem conference
     type: conference
@@ -347,6 +366,8 @@ conferences:
     last_verified: 2026-11-24 verified-search (official pages)
 
   - id: aaas-annual-meeting
+    travel_covered: full
+    travel_note: "Travel Awards reimburse flight/train + up to 3 hotel nights (up to $1,600)"
     name: AAAS Annual Meeting
     type: conference
     fields: [biotech, cs, econ]
@@ -365,6 +386,8 @@ conferences:
     last_verified: 2026-11-24 verified-search
 
   - id: asbmb-annual-meeting
+    travel_covered: partial
+    travel_note: "Travel awards for first-author abstracts; amount not verified"
     name: ASBMB Annual Meeting
     type: conference
     fields: [biotech]
@@ -383,6 +406,8 @@ conferences:
     last_verified: 2026-11-24 verified-search (official pages)
 
   - id: biophysical-society
+    travel_covered: partial
+    travel_note: "Member travel awards; amount and undergrad eligibility not verified"
     name: Biophysical Society Annual Meeting
     type: conference
     fields: [biotech]
@@ -401,6 +426,8 @@ conferences:
     last_verified: 2026-11-24 verified-search
 
   - id: ismb
+    travel_covered: partial
+    travel_note: "Fellowships cover about 50% of travel + registration"
     name: ISMB/ECCB (Intelligent Systems for Molecular Biology)
     key_name: ismb
     type: conference
@@ -469,6 +496,8 @@ conferences:
     last_verified: 2026-11-24 verified-search
 
   - id: gsa-drosophila
+    travel_covered: partial
+    travel_note: "Undergrad travel award up to $599"
     name: GSA Annual Drosophila Research Conference
     type: conference
     fields: [biotech]
@@ -487,6 +516,8 @@ conferences:
     last_verified: 2026-11-24 verified-search
 
   - id: igem-jamboree
+    travel_covered: none
+    travel_note: "Team fees; travel only if your university team pays"
     name: iGEM Grand Jamboree
     type: conference
     fields: [biotech, cs]
@@ -505,6 +536,8 @@ conferences:
     last_verified: 2026-11-24 verified-search (official site + Stanford Report)
 
   - id: cell-bio-ascb
+    travel_covered: partial
+    travel_note: "ASCB travel grants (amount varies)"
     name: Cell Bio (ASCB|EMBO Meeting)
     type: conference
     fields: [biotech]
@@ -524,6 +557,8 @@ conferences:
 
   # ==================================================== econ / finance / policy =
   - id: assa-aea-annual-meeting
+    travel_covered: none
+    travel_note: "No travel funding - but selected sessions are livestreamed free"
     name: ASSA/AEA Annual Meeting
     type: conference
     fields: [econ]
@@ -539,6 +574,8 @@ conferences:
     last_verified: 2026-11-24 verified-search
 
   - id: midwest-economics-association
+    travel_covered: none
+    travel_note: "No travel funding; Indianapolis is ~3 hours from Chicago"
     name: Midwest Economics Association Annual Meetings (undergraduate research sessions)
     key_name: midwest economics association
     type: conference
@@ -557,6 +594,8 @@ conferences:
     last_verified: 2026-11-24 verified-search (official 2027 undergrad guidelines PDF)
 
   - id: eea-ipe-undergrad
+    travel_covered: none
+    travel_note: "No travel funding found"
     name: Eastern Economic Association - Issues in Political Economy undergraduate sessions
     key_name: eastern economic association
     type: conference
@@ -620,6 +659,7 @@ conferences:
     last_verified: 2026-11-24 verified-search
 
   - id: college-fed-challenge
+    location: San Francisco, CA (district round)
     name: College Fed Challenge
     type: conference
     fields: [econ]
@@ -644,6 +684,8 @@ conferences:
     last_verified: 2026-11-24 verified-search
 
   - id: hks-public-policy-leadership-conference
+    travel_covered: full
+    travel_note: "Fully funded: travel, lodging and meals"
     name: Harvard Kennedy School Public Policy Leadership Conference (PPLC)
     type: conference
     fields: [econ]

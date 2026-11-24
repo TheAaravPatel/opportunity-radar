@@ -41,6 +41,10 @@ Nothing this week.
 Nothing new.
 {% endfor %}
 
+{% if d.hidden_far_away %}
+({{ d.hidden_far_away }} far-away new items without housing + travel left out)
+{% endif %}
+
 == New conferences, hackathons & travel scholarships ==
 {% for i in d.new_conferences %}
 * {{ i.title }} - {{ i.org }} ({{ i.type }})  {{ i.url }}

@@ -92,6 +92,14 @@ Use `RADAR_NOW=2027-01-05T15:00:00Z` to pretend it's another date (tests do this
   `conference_aliases`. The registry runs first so it owns the display fields. Event start dates
   are deadlines of kind `event` (calendar only; never reminders). PhD-only venues and trade shows
   get `extra.hidden_reason`; far-away hackathons are hidden on the dashboard by default.
+- **Travel rule** (`radar/travel.py`, settings `travel:`): every item gets a travel fit -
+  bay_area / chicagoland / remote / covered / partial / outside / no_location. The dashboard's
+  default "Where" filter and the digest only show bay_area, chicagoland, remote, covered and
+  no_location (partial too if `allow_partial`). Regions check the state ("Richmond, VA" isn't
+  the Bay Area); "covered" needs a registry `travel_covered: full` or description phrases for
+  BOTH housing and travel (`keywords.yaml -> travel`, negations ignored, titles never used).
+- **Schema changes**: add new columns to `ADDED_COLUMNS` in db.py so the database already on
+  the data branch is upgraded in place.
 - **Claude API** (later phases): model from `settings.yaml` (`claude-opus-5-5`), only for
   items keyword rules can't place, cached in `llm_cache`, hard per-run caps, everything
   no-ops without `ANTHROPIC_API_KEY`.

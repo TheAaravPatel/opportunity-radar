@@ -160,6 +160,20 @@ automatically: [student-opportunities](https://github.com/gkarpe2204/student-opp
 (daily bot: conferences, MLH and Devpost hackathons) and
 [BadgeUp](https://github.com/Jose-Gael-Cruz-Lopez/BadgeUp) (stale, used as a seed only).
 
+### Where opportunities can be (your travel rule)
+`config/settings.yaml -> travel` controls it. By default the dashboard's **Where** filter and the
+email only show things in the **Bay Area or Chicagoland**, **remote/virtual**, or anywhere else
+**only if housing and travel are both paid for**:
+- conferences/programs: set `travel_covered: full | partial | none` (+ `travel_note`) in the
+  registry YAMLs
+- job postings: detected from the description ("relocation assistance", "housing stipend" +
+  "travel reimbursement"...). Phrase lists live in `config/keywords.yaml -> travel`.
+
+Many job feeds (like SimplifyJobs) don't include descriptions, so far-away jobs from them show as
+"far away - housing not covered?" and are hidden by default. Choose **Where → Anywhere** to see
+everything. Set `allow_partial: true` to also include partly funded ones, or `allow_remote: false`
+to hide remote roles.
+
 ### Change what the email or scores do
 - `config/settings.yaml` → `digest:` controls the deadline window, the reminder days (14/7/2)
   and how many new items to list.

@@ -9,6 +9,14 @@ profile:
   school: Stanford
   time_zone: America/Los_Angeles   # "today" and the digest use Pacific time
 
+travel:
+  # Your rule: show opportunities in the Bay Area or Chicagoland; anywhere else
+  # only if they pay for BOTH housing and flights. Used by the dashboard's
+  # default "Where" filter and by the email digest.
+  home_regions: [bay_area, chicagoland]
+  allow_remote: true        # remote / virtual items need no travel, so they fit
+  allow_partial: false      # true -> also include "partly funded" (e.g. up to $600 travel)
+
 dashboard:
   title: Opportunity Radar
   # Where GitHub Pages publishes the dashboard (used for links in the email).

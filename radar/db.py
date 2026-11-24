@@ -28,7 +28,14 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+
+# Columns added after the first version. CREATE TABLE IF NOT EXISTS doesn't
+# change a table that already exists (the database on the data branch), so
+# connect() adds any of these that are missing.
+ADDED_COLUMNS = {
+    "opportunities": {"chicagoland": "INTEGER NOT NULL DEFAULT 0", "travel": "TEXT", "travel_reason": "TEXT"},
+}
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS meta (
@@ -77,6 +84,9 @@ CREATE TABLE IF NOT EXISTS opportunities (
     cities              TEXT,                 -- JSON list of normalized cities
     remote              INTEGER NOT NULL DEFAULT 0,
     bay_area            INTEGER NOT NULL DEFAULT 0,
+    chicagoland         INTEGER NOT NULL DEFAULT 0,
+    travel              TEXT,                 -- travel fit: bay_area / chicagoland / remote / covered / partial / outside / no_location
+    travel_reason       TEXT,
     url                 TEXT,
     posted_at           TEXT,
     first_seen_at       TEXT NOT NULL,
@@ -231,10 +241,20 @@ def connect(path: str | Path) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row          # rows behave like dicts: row["title"]
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA)
+    _add_missing_columns(conn)
     if get_meta(conn, "schema_version") is None:
         set_meta(conn, "schema_version", str(SCHEMA_VERSION))
     conn.commit()
     return conn
+
+
+def _add_missing_columns(conn: sqlite3.Connection) -> None:
+    for table, columns in ADDED_COLUMNS.items():
+        existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+        for name, definition in columns.items():
+            if name not in existing:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {definition}")
+    set_meta(conn, "schema_version", str(SCHEMA_VERSION))
 
 
 def get_meta(conn: sqlite3.Connection, key: str, default: str | None = None) -> str | None:

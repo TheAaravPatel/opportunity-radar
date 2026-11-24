@@ -108,9 +108,24 @@ function nextDeadline(it) {
 // hackathons that are neither in the Bay Area nor online (spec rules).
 function recommendedConference(it) {
   if (it.extra.hidden_reason) return false;
-  if (it.type === "hackathon") return it.bay_area || it.remote;
+  if (it.type === "hackathon") return it.bay_area || it.chicagoland || it.remote;
   return true;
 }
+
+// Your travel rule (settings.yaml -> travel): Bay Area, Chicagoland or remote,
+// or - anywhere else - housing AND flights are paid for.
+const FITS = new Set(["bay_area", "chicagoland", "remote", "covered", "no_location"]);
+function travelFits(it, level) {
+  if (!it.travel) return true;                       // not classified yet (older data)
+  if (FITS.has(it.travel)) return true;
+  return level === "partial" && it.travel === "partial";
+}
+const DEFAULT_WHERE = DATA.profile.allow_partial ? "partial" : "fits";
+const TRAVEL_CHIPS = {
+  bay_area: ["📍 Bay Area", ""], chicagoland: ["📍 Chicagoland", ""], remote: ["remote", ""],
+  covered: ["✈️ housing + travel covered", "new"], partial: ["partly funded", "warn"],
+  outside: ["far away - housing not covered?", "warn"], no_location: ["location not listed", ""],
+};
 const COST_LABELS = { free: "free", scholarship: "scholarship-funded", student: "student price", full: "full price" };
 
 function fmtRange(start, end) {
@@ -145,8 +160,8 @@ function itemsFor(tab, sub) {
 }
 
 const DEFAULT_FILTERS = {
-  q: "", status: "active", type: "", elig: "", plan: false, loc: "", deadline: "", fresh: "", term: "", cost: "", sort: "newest",
-  field: "", showall: false,
+  q: "", status: "active", type: "", elig: "", plan: false, deadline: "", fresh: "", term: "", cost: "", sort: "newest",
+  field: "", showall: false, where: DEFAULT_WHERE,
 };
 
 function defaultsFor(view) {
@@ -178,9 +193,10 @@ function applyFilters(items, f) {
     if (f.elig === "me" && !openToMe(it, f.plan)) return false;
     if (f.elig === "50" && (it.score ?? 0) < 50) return false;
     if (f.elig === "70" && (it.score ?? 0) < 70) return false;
-    if (f.loc === "bay" && !it.bay_area) return false;
-    if (f.loc === "remote" && !it.remote) return false;
-    if (f.loc === "bayremote" && !(it.bay_area || it.remote)) return false;
+    if ((f.where === "fits" || f.where === "partial") && !travelFits(it, f.where)) return false;
+    if (f.where === "bay" && !it.bay_area) return false;
+    if (f.where === "chicago" && !it.chicagoland) return false;
+    if (f.where === "remote" && !it.remote) return false;
     const next = nextDeadline(it);
     if (f.deadline === "has" && !next) return false;
     if ((f.deadline === "14" || f.deadline === "30") && !(next && daysUntil(next.date) <= Number(f.deadline))) return false;
@@ -242,7 +258,11 @@ function filterPanel(items, f, view) {
     select("elig", "Eligibility", [["", "Any"], ["me", `Open to ${PLURAL[ME] || "me"}`], ["50", "Score 50+"], ["70", "Score 70+"]], f.elig),
     select("fresh", "New", [["", "Any time"], ["1", "Last 24 hours"], ["7", "Last 7 days"]], f.fresh),
     select("deadline", "Deadline", [["", "Any"], ["has", "Has a deadline"], ["14", "Next 14 days"], ["30", "Next 30 days"]], f.deadline),
-    select("loc", "Location", [["", "Anywhere"], ["bay", "Bay Area"], ["remote", "Remote"], ["bayremote", "Bay Area or remote"]], f.loc),
+    select("where", "Where", [
+      ["fits", "Bay Area / Chicagoland / remote, or housing + travel covered"],
+      ["partial", "...plus partly funded"],
+      ["bay", "Bay Area only"], ["chicago", "Chicagoland only"], ["remote", "Remote only"],
+      ["", "Anywhere"]], f.where),
   ];
   if (types.length > 1) rows.push(select("type", "Type", [["", "All types"], ...types.map((t) => [t, t])], f.type));
   if (isInternship) rows.push(select("term", "Term", [["", "Any term"], ["summer", "Summer"], ["offseason", "Off-season (fall/winter/spring)"]], f.term));
@@ -307,7 +327,8 @@ function card(it) {
   if (it.subcategory && it.subcategory !== it.type) meta.push(el("span", { class: "chip", text: it.subcategory }));
   if (it.type !== "industry internship") meta.push(el("span", { class: "chip", text: it.type }));
   it.terms.slice(0, 3).forEach((t) => meta.push(el("span", { class: "chip", text: t })));
-  if (it.remote) meta.push(el("span", { class: "chip", text: "remote" }));
+  const [travelText, travelClass] = TRAVEL_CHIPS[it.travel] || [];
+  if (travelText) meta.push(el("span", { class: `chip ${travelClass}`, title: it.travel_reason || "", text: travelText }));
   if (it.class_years.length) meta.push(el("span", { class: "chip", text: it.class_years.map((y) => PLURAL[y]).join(" / ") }));
 
   const conf = it.extra.conference;
@@ -338,6 +359,8 @@ function card(it) {
     conf ? el("div", { class: "deadline-line" }, `📅 ${fmtRange(conf.start_date, conf.end_date)}`,
       conf.start_date && conf.start_date >= TODAY ? ` (${inDays(daysUntil(conf.start_date))})` : "") : null,
     conf && conf.scholarship_covers ? el("div", { class: "card-reason", text: `Funding: ${conf.scholarship_covers}` }) : null,
+    ["covered", "partial"].includes(it.travel) && it.travel_reason && !(conf && conf.scholarship_covers)
+      ? el("div", { class: "card-reason", text: `Travel: ${it.travel_reason}` }) : null,
     deadlineLine(it),
     showReason ? el("div", { class: "card-reason", text: it.status_reason }) : null,
     it.extra.notes ? el("details", { class: "why" }, el("summary", { text: "Notes" }), el("p", { text: it.extra.notes })) : null,
@@ -433,7 +456,9 @@ function earlyIntro() {
 
 function deadlinesView() {
   const f = filters();
-  const pool = DATA.items.filter((it) => (f.status === "all" || it.status !== "closed") && (!isConference(it) || recommendedConference(it)));
+  const pool = DATA.items.filter((it) => (f.status === "all" || it.status !== "closed")
+    && (!isConference(it) || recommendedConference(it))
+    && (f.where === "" || travelFits(it, f.where === "partial" ? "partial" : "fits")));
   const groups = {
     internships: (it) => !isConference(it) && !isStanford(it) && !isEarly(it),
     early: (it) => isEarly(it) && !isStanford(it),
@@ -448,7 +473,8 @@ function deadlinesView() {
       select("field", "Field", [["", "All fields"], ["cs", "CS"], ["econ", "Econ"], ["biotech", "Biotech"]], f.field || ""),
       select("type", "Kind of opportunity", [["", "Everything"], ["internships", "Internships"], ["early", "Early programs"], ["stanford", "Stanford"], ["conferences", "Conferences"]], f.type),
       select("kind", "Deadline type", [["", "All"], ["application", "Applications"], ["opens", "Opening dates"], ["scholarship", "Scholarships"], ["abstract", "Abstracts"], ["registration", "Registration"]], f.kind || ""),
-      select("status", "Status", [["active", "Hide closed"], ["all", "Include closed"]], f.status)));
+      select("status", "Status", [["active", "Hide closed"], ["all", "Include closed"]], f.status),
+      select("where", "Where", [["fits", "Fits your travel rule"], ["partial", "...plus partly funded"], ["", "Anywhere"]], f.where)));
   return el("div", {}, controls,
     el("div", { class: "panel" }, el("h2", { text: "Next 14 days" }), agenda(soon, `${soon.length} deadline${soon.length === 1 ? "" : "s"}`)),
     el("div", { class: "panel" }, calendar(entries)),
@@ -479,7 +505,7 @@ function conferencesView() {
   if (!items.length) return el("div", { class: "empty", text: "No conferences loaded yet." });
   if (state.sub === "upcoming") return el("div", {}, conferenceIntro(), listView(items));
   if (state.sub === "hackathons") {
-    return el("div", {}, el("p", { class: "result-count", text: "Bay Area and online hackathons by default; tick the box in Filters to see the rest." }), listView(items));
+    return el("div", {}, el("p", { class: "result-count", text: "Bay Area, Chicagoland and online hackathons by default; tick the box in Filters to see the rest." }), listView(items));
   }
   const shown = items.filter((it) => it.status !== "closed" && recommendedConference(it));
   const entries = deadlineEntries(shown);
@@ -498,7 +524,8 @@ function conferencesView() {
 function conferenceIntro() {
   return el("p", { class: "result-count" },
     "Conferences and travel scholarships, best value first: free or scholarship-funded, then student-priced, then full price; ",
-    "Bay Area or virtual before far away. Industry trade shows and PhD-only venues are hidden unless you tick the box in Filters. ",
+    "near you (Bay Area / Chicagoland) or virtual before far away. Far-away events only show if they pay for housing + travel ",
+    "(change \"Where\" in Filters). Industry trade shows and PhD-only venues are hidden unless you tick the box in Filters. ",
     "Hackathons have their own tab.");
 }
 
@@ -539,13 +566,14 @@ function counts() {
   const out = {};
   for (const tab of TABS) {
     if (tab.subs && tab.id === "internships") {
-      for (const [sub] of tab.subs) out[`${tab.id}/${sub}`] = itemsFor(tab.id, sub).filter(isActive).length;
+      for (const [sub] of tab.subs) out[`${tab.id}/${sub}`] = itemsFor(tab.id, sub).filter((it) => isActive(it) && travelFits(it, DEFAULT_WHERE)).length;
     }
   }
-  out.stanford = itemsFor("stanford").filter(isActive).length;
-  out.conferences = itemsFor("conferences").filter((it) => isActive(it) && recommendedConference(it)).length;
-  out["conferences/upcoming"] = itemsFor("conferences", "upcoming").filter((it) => isActive(it) && recommendedConference(it)).length;
-  out["conferences/hackathons"] = itemsFor("conferences", "hackathons").filter((it) => isActive(it) && recommendedConference(it)).length;
+  const shown = (it) => isActive(it) && travelFits(it, DEFAULT_WHERE) && (!isConference(it) || recommendedConference(it));
+  out.stanford = itemsFor("stanford").filter(shown).length;
+  out.conferences = itemsFor("conferences").filter(shown).length;
+  out["conferences/upcoming"] = itemsFor("conferences", "upcoming").filter(shown).length;
+  out["conferences/hackathons"] = itemsFor("conferences", "hackathons").filter(shown).length;
   out.suggested = (DATA.suggestions || []).length;
   return out;
 }
@@ -579,8 +607,8 @@ function renderMain() {
 }
 
 function renderHeader() {
-  const fresh = DATA.items.filter((it) => isNew(it, 24)).length;
-  const due = DATA.items.filter((it) => it.status !== "closed" && (!isConference(it) || recommendedConference(it)))
+  const fresh = DATA.items.filter((it) => isNew(it, 24) && travelFits(it, DEFAULT_WHERE)).length;
+  const due = DATA.items.filter((it) => it.status !== "closed" && travelFits(it, DEFAULT_WHERE) && (!isConference(it) || recommendedConference(it)))
     .flatMap((it) => it.deadlines)
     .filter((d) => { const n = daysUntil(d.date); return d.kind !== "event" && n >= 0 && n <= 14; }).length;
   const failing = DATA.sources.filter((s) => s.state === "failing").length;

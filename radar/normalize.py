@@ -46,6 +46,29 @@ BAY_AREA_CITIES = {
     "half moon bay", "novato", "san rafael", "richmond", "union city", "san leandro",
 }
 
+# Chicago and its suburbs (Cook, DuPage, Lake, Kane, Will counties) - plus the
+# national labs nearby.
+CHICAGOLAND_CITIES = {
+    "chicago", "north chicago", "evanston", "skokie", "wilmette", "glenview", "northbrook",
+    "northfield", "deerfield", "riverwoods", "bannockburn", "lake forest", "mettawa",
+    "lincolnshire", "vernon hills", "libertyville", "waukegan", "highland park", "des plaines",
+    "rosemont", "park ridge", "elk grove village", "schaumburg", "hoffman estates",
+    "arlington heights", "palatine", "rolling meadows", "itasca", "wood dale", "bensenville",
+    "oak brook", "oakbrook terrace", "lombard", "downers grove", "lisle", "naperville",
+    "wheaton", "aurora", "batavia", "elgin", "joliet", "bolingbrook", "romeoville", "lemont",
+    "argonne", "burr ridge", "westchester", "oak park", "cicero", "evergreen park", "franklin park",
+}
+
+# City names that also exist in other states. Without a state ("Richmond")
+# we can't tell Richmond, CA from Capital One's Richmond, VA, so they only
+# count when the state is given.
+AMBIGUOUS_CITIES = {
+    "richmond", "newark", "dublin", "belmont", "campbell", "alameda", "fremont", "hayward",
+    "aurora", "wheaton", "elgin", "batavia", "lake forest", "highland park", "oak park",
+    "northfield", "deerfield", "westchester", "burlingame", "union city",
+}
+COUNTRY_WORDS = {"us", "usa", "united", "u s", "u s a"}
+
 
 def _ascii(text: str) -> str:
     """'Forté' -> 'Forte' so accents don't break matching."""
@@ -94,14 +117,42 @@ def is_remote(locations: list[str]) -> bool:
     return any("remote" in (loc or "").lower() for loc in locations or [])
 
 
+def _state_of(location: str) -> str | None:
+    """'Sunnyvale, CA' -> 'ca'; 'Sunnyvale, California - HQ' -> 'california';
+    'Austin, TX, United States' -> 'tx'; 'Sunnyvale, United States' -> None."""
+    parts = [p for p in location.split(",")[1:] if p.strip()]
+    if not parts:
+        return None
+    first = simplify_text(parts[0].split(" - ")[0].split("(")[0])
+    word = first.split()[0] if first else ""
+    if not word or word in COUNTRY_WORDS or first in COUNTRY_WORDS:
+        return None
+    return word
+
+
+def region_of(location: str) -> str | None:
+    """'bay_area', 'chicagoland' or None for one location string."""
+    low = simplify_text(location or "")
+    if "bay area" in low or "silicon valley" in low:
+        return "bay_area"
+    if "chicagoland" in low or "chicago" in low.split():
+        return "chicagoland"
+    city, state = city_of(location or ""), _state_of(location or "")
+    if state is None and city in AMBIGUOUS_CITIES:
+        return None
+    if city in BAY_AREA_CITIES and state in (None, "ca", "california"):
+        return "bay_area"
+    if city in CHICAGOLAND_CITIES and state in (None, "il", "illinois"):
+        return "chicagoland"
+    return None
+
+
 def is_bay_area(locations: list[str]) -> bool:
-    for loc in locations or []:
-        low = simplify_text(loc)
-        if "bay area" in low or "silicon valley" in low:
-            return True
-        if city_of(loc) in BAY_AREA_CITIES:
-            return True
-    return False
+    return any(region_of(loc) == "bay_area" for loc in locations or [])
+
+
+def is_chicagoland(locations: list[str]) -> bool:
+    return any(region_of(loc) == "chicagoland" for loc in locations or [])
 
 
 def match_key(org: str, title: str) -> str:

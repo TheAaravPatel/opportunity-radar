@@ -67,6 +67,7 @@ class Digest:
     totals: dict = field(default_factory=dict)
 
     new_unique: int = 0     # distinct new items (one item can be in two fields)
+    hidden_far_away: int = 0  # new items left out by the travel rule
 
     @property
     def new_total(self) -> int:
@@ -104,6 +105,15 @@ def _open_to_me(class_years: list[str], me: str | None) -> bool:
     return not class_years or (me in class_years)
 
 
+FITS = {"bay_area", "chicagoland", "remote", "covered", "no_location"}
+
+
+def travel_fits(row: sqlite3.Row, allow_partial: bool) -> bool:
+    """Your travel rule (settings.yaml -> travel), same as the dashboard's default."""
+    travel = row["travel"]
+    return not travel or travel in FITS or (allow_partial and travel == "partial")
+
+
 def _item(row: sqlite3.Row) -> dict:
     return {
         "id": row["id"],
@@ -118,6 +128,8 @@ def _item(row: sqlite3.Row) -> dict:
         "status_reason": row["status_reason"] or "",
         "class_years": _loads(row["class_years"], []),
         "early": bool(row["early_career"]),
+        "travel": row["travel"] or "",
+        "travel_reason": row["travel_reason"] or "",
         "registry_id": row["registry_id"],
         "extra": _loads(row["extra"], {}),
     }
@@ -132,6 +144,7 @@ def build_digest(conn: sqlite3.Connection, cfg: Config) -> Digest:
     cap = int(cfg.get("digest.max_new_per_field", 15))
     last = get_meta(conn, "last_digest_at")
     digest = Digest(today=today, first_digest=last is None)
+    allow_partial = bool(cfg.get("travel.allow_partial", False))
 
     # 1. Deadlines in the next N days ---------------------------------------
     rows = conn.execute(
@@ -144,6 +157,8 @@ def build_digest(conn: sqlite3.Connection, cfg: Config) -> Digest:
     ).fetchall()
     sent = {(r["deadline_id"], r["days_before"]) for r in conn.execute("SELECT * FROM reminders_sent")}
     for r in rows:
+        if not travel_fits(r, allow_partial):
+            continue
         days = (date.fromisoformat(r["date"]) - today).days
         entry = {
             **_item(r), "deadline_id": r["deadline_id"], "kind": r["kind"], "date": r["date"],
@@ -163,6 +178,8 @@ def build_digest(conn: sqlite3.Connection, cfg: Config) -> Digest:
               AND d.date >= ? AND d.date <= ? ORDER BY d.date""",
         (*EARLY_TYPES, today.isoformat(), week_end),
     ):
+        if not travel_fits(r, allow_partial):
+            continue
         entry = {**_item(r), "kind": r["kind"], "date": r["date"], "label": r["label"],
                  "days": (date.fromisoformat(r["date"]) - today).days,
                  "week_key": f"early_week:{r['deadline_id']}"}
@@ -175,6 +192,8 @@ def build_digest(conn: sqlite3.Connection, cfg: Config) -> Digest:
         f"SELECT * FROM opportunities WHERE type IN ({','.join('?' * len(EARLY_TYPES))}) AND status IN ('closed', 'expected soon')",
         EARLY_TYPES,
     ):
+        if not travel_fits(r, allow_partial):
+            continue
         item = _item(r)
         start = item["extra"].get("expected_open_start")
         if not start:
@@ -200,6 +219,9 @@ def build_digest(conn: sqlite3.Connection, cfg: Config) -> Digest:
         if not store.is_baseline(r, first_runs) and (r["first_run_id"] or 0) > last_run
     ]
     for r in new_rows:
+        if not travel_fits(r, allow_partial):
+            digest.hidden_far_away += 1
+            continue
         item = _item(r)
         if item["type"] in CONFERENCE_TYPES:
             digest.new_conferences.append(item)

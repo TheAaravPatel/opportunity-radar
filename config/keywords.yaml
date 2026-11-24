@@ -202,3 +202,63 @@ early_career:
     - forum
     - experience
     - conference
+
+# Travel rule (settings.yaml -> travel). Outside the Bay Area and Chicagoland,
+# an opportunity only fits if it pays for BOTH housing and travel. These
+# phrases are looked for in descriptions, notes and scholarship details.
+# "...not provided" / "no relocation" style negations are ignored automatically.
+travel:
+  both:        # one phrase is enough: housing AND travel are covered
+    - relocation assistance
+    - relocation stipend
+    - relocation package
+    - relocation support
+    - relocation bonus
+    - relocation benefits
+    - corporate housing
+    - company-provided housing
+    - housing and travel
+    - travel and housing
+    - travel and lodging
+    - travel and accommodation
+    - travel and accommodations
+    - lodging and travel
+    - flights and housing
+    - airfare and lodging
+    - airfare and housing
+    - travel, lodging
+    - travel, housing
+    - all expenses paid
+    - all-expenses-paid
+    - all expenses covered
+    - fully funded
+    - fully-funded
+    - room and board
+    - travel covered
+    - travel is covered
+  housing:     # housing only - counts as "covered" only together with a travel phrase
+    - housing stipend
+    - housing allowance
+    - housing assistance
+    - housing provided
+    - housing is provided
+    - free housing
+    - lodging
+    - hotel
+    - hotel nights
+    - accommodation
+    - accommodations
+    - shared housing
+  travel:      # travel only - counts as "covered" only together with a housing phrase
+    - travel stipend
+    - travel reimbursement
+    - travel reimbursed
+    - travel grant
+    - travel award
+    - travel awards
+    - travel scholarship
+    - travel scholarships
+    - airfare
+    - flights
+    - flight
+    - round-trip travel

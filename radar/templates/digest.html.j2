@@ -62,6 +62,7 @@
     {% endif %}
     {% endfor %}
   {% else %}<p style="{{ muted }}">Nothing new.</p>{% endif %}
+  {% if d.hidden_far_away %}<p style="{{ muted }}font-size:13px;">Left out: {{ d.hidden_far_away }} new item{{ "s" if d.hidden_far_away != 1 }} outside the Bay Area/Chicagoland that don't say they cover housing + travel (set "Where" to "Anywhere" on the dashboard to see them).</p>{% endif %}
 
   {# 4. Conferences #}
   <h2 style="font-size:17px;margin:18px 0 6px;">New conferences, hackathons &amp; travel scholarships</h2>

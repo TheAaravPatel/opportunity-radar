@@ -19,7 +19,7 @@ import re
 from datetime import date
 
 from radar.models import Deadline, Item
-from radar.normalize import is_bay_area, simplify_text
+from radar.normalize import is_bay_area, is_chicagoland, simplify_text
 
 # Lower = better. "unknown" sits between student-priced and full price.
 COST_RANK = {"free": 0, "scholarship": 0, "student": 1, "unknown": 1.5, "full": 2}
@@ -124,6 +124,7 @@ def conference_item(
 ) -> Item:
     locations = [location] if location else []
     bay_area = is_bay_area(locations)
+    chicagoland = is_chicagoland(locations)
     year = (start or "")[:4] or (re.search(r"20\d\d", name or "") or [None])[0] or "tba"
     all_deadlines = list(deadlines or [])
     if start:
@@ -133,7 +134,8 @@ def conference_item(
     last_day = end or start
     if last_day and last_day < today.isoformat():
         status, status_reason = "closed", "Event is over"
-    priority = COST_RANK.get(cost, 1.5) + (0 if (bay_area or virtual) else 0.5)
+    # Near you (Bay Area or Chicagoland) or virtual ranks above far away at the same cost.
+    priority = COST_RANK.get(cost, 1.5) + (0 if (bay_area or chicagoland or virtual) else 0.5)
 
     return Item(
         source_item_id=source_item_id,
@@ -163,6 +165,7 @@ def conference_item(
                 "location": location,
                 "virtual": virtual,
                 "bay_area": bay_area,
+                "chicagoland": chicagoland,
                 "cost_tier": cost,
                 "cost_note": cost_note,
                 "scholarship": scholarship,

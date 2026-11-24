@@ -33,6 +33,8 @@
 #                       approx: true when the date is an estimate
 #   notes               anything else worth knowing
 #   last_verified       when/how this entry was last checked
+#   travel_covered      full | partial | none - do they pay for housing AND travel?
+#   travel_note         what exactly is covered
 #   watch               false -> the page-watcher skips this page (it blocks bots
 #                       or needs a login). Known deadlines still show up.
 #   watch_note          why it isn't watched
@@ -46,6 +48,8 @@ programs:
 
   # ---------------------------------------------------------------- banks ----
   - id: bofa-student-leaders
+    travel_covered: full
+    travel_note: "Paid internship in your own community; the national summit trip is paid for (historically - verify)"
     firm: Bank of America
     program: Student Leaders
     fields: [econ]
@@ -98,6 +102,7 @@ programs:
     last_verified: 2026-11-24 verified-search (official page)
 
   - id: citi-early-id
+    location: virtual
     firm: Citi
     program: Early ID Program
     fields: [econ]
@@ -127,6 +132,7 @@ programs:
     last_verified: 2026-11-24 verified-search (official page + Extern)
 
   - id: goldman-emerging-leaders
+    location: virtual
     firm: Goldman Sachs
     program: Emerging Leaders Series
     aka: [Goldman Early Insights]
@@ -151,6 +157,7 @@ programs:
     last_verified: 2026-11-24 verified-search
 
   - id: morgan-stanley-early-insights
+    location: virtual
     firm: Morgan Stanley
     program: Early Insights Program
     fields: [econ]
@@ -166,6 +173,7 @@ programs:
     last_verified: 2026-11-24 verified-search (tal.net posting + Harvard calendar)
 
   - id: morgan-stanley-sophomore-analyst
+    location: New York, NY
     firm: Morgan Stanley
     program: Sophomore Summer Analyst Program (select divisions)
     fields: [econ]
@@ -201,6 +209,7 @@ programs:
     last_verified: 2026-11-24 verified-search (Opportunities for Youth)
 
   - id: lazard-early-insights
+    location: New York, NY
     firm: Lazard
     program: Early Insights (US)
     fields: [econ]
@@ -213,6 +222,7 @@ programs:
     last_verified: 2026-11-24 unverified (third-party only)
 
   - id: evercore-sophomore
+    location: New York, NY
     firm: Evercore
     program: Sophomore Insight / Sophomore programs
     fields: [econ]
@@ -224,6 +234,7 @@ programs:
     last_verified: 2026-11-24 unverified (third-party only)
 
   - id: moelis-sophomore
+    location: New York, NY
     firm: Moelis & Company
     program: Sophomore program
     fields: [econ]
@@ -353,6 +364,8 @@ programs:
     watch_note: Citadel's sites block automated requests (bot protection); Simplify and zshah101 carry Citadel's postings.
 
   - id: jane-street-fttp
+    travel_covered: full
+    travel_note: "Travel covered by Jane Street"
     firm: Jane Street
     program: First Year Trading and Technology Program (FTTP)
     aka: [FIRST, First Year Trading and Technology Program]
@@ -385,6 +398,7 @@ programs:
     last_verified: 2026-11-24 verified-search (official page)
 
   - id: two-sigma-first-year
+    location: New York, NY
     firm: Two Sigma
     program: First-Year Software Engineering Internship
     fields: [cs]
@@ -438,6 +452,7 @@ programs:
     last_verified: 2026-11-24 verified-search (official page)
 
   - id: sig-discovery
+    location: virtual
     firm: Susquehanna International Group (SIG)
     program: Discovery programs
     fields: [cs, econ]
@@ -450,6 +465,8 @@ programs:
     last_verified: 2026-11-24 verified-search (job board copies)
 
   - id: capital-one-summits
+    travel_covered: full
+    travel_note: "Capital One covers travel and lodging"
     firm: Capital One
     program: Summits (Tech / Analyst / Product / Finance)
     fields: [cs, econ]
@@ -465,6 +482,7 @@ programs:
     last_verified: 2026-11-24 verified-search
 
   - id: capital-one-early-internship
+    location: McLean, VA
     firm: Capital One
     program: Early Internship Program
     fields: [cs, econ]
@@ -567,6 +585,8 @@ programs:
   # research programs (Bio-X, BSURP, SSRP-Amgen) live in watched_pages.yaml.
 
   - id: aea-summer-program
+    travel_covered: full
+    travel_note: "$3,250 stipend + round-trip travel + room and board"
     firm: American Economic Association
     program: AEA Summer Training and Scholarship Program (AEASP)
     fields: [econ]
@@ -707,6 +727,8 @@ programs:
     last_verified: 2026-11-24 verified-search (third-party calendar)
 
   - id: out-for-undergrad
+    travel_covered: full
+    travel_note: "All expenses paid (travel, lodging, meals)"
     firm: Out for Undergrad (O4U)
     program: O4U conferences (Business, Digital, Engineering + Life Sciences)
     type: pipeline program

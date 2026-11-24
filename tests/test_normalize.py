@@ -33,3 +33,19 @@ def test_bay_area_and_remote():
     assert not is_bay_area(["Seattle, WA"])
     assert is_remote(["Remote in USA"])
     assert not is_remote(["Austin, TX"])
+
+
+
+def test_regions_use_the_state():
+    from radar.normalize import is_chicagoland, region_of
+    assert region_of("Richmond, VA") is None              # Capital One HQ is not the Bay Area
+    assert region_of("Richmond, CA") == "bay_area"
+    assert region_of("Richmond") is None                    # ambiguous without a state
+    assert region_of("Sunnyvale, California - HQ") == "bay_area"
+    assert region_of("Chicago, IL") == "chicagoland"
+    assert region_of("Greater Chicago Area") == "chicagoland"
+    assert region_of("Aurora, CO") is None and region_of("Aurora, IL") == "chicagoland"
+    assert region_of("Lake Forest, CA") is None             # Orange County, not Lake Forest IL
+    assert is_chicagoland(["New York, NY", "Northbrook, IL"])
+    assert region_of("Austin, TX, United States") is None
+    assert region_of("Palo Alto, United States") == "bay_area"
