@@ -79,6 +79,16 @@ def test_oracle_fetcher_pages_and_filters():
                      "findReqs;siteNumber=CX_1,keyword=sophomore,sortBy=POSTING_DATES_DESC,offset=2"]
 
 
+def test_board_filter_needs_real_evidence(cfg):
+    # A firm with ONE registry program: its ordinary internships must not pass
+    # the early-career filter just because the firm is in the registry.
+    matcher = ProgramMatcher([{"id": "bank-fellowship", "firm": "Big Bank", "program": "Big Bank Fellowship"}])
+    title = "2027 Market Sales Analyst Internship - Summer Experience Program"
+    assert matcher.match("Big Bank", title) == "bank-fellowship"            # fine for linking flagged postings
+    assert matcher.match("Big Bank", title, strict=True) is None            # not for filtering a whole board
+    assert matcher.match("Big Bank", "Big Bank Fellowship 2027", strict=True) == "bank-fellowship"
+
+
 def test_early_career_only_boards(cfg):
     board = "https://boards-api.greenhouse.io/v1/boards/fastfirm/jobs?content=true"
     jobs = {"jobs": [
@@ -95,11 +105,30 @@ def test_early_career_only_boards(cfg):
 
 
 # ----------------------------------------------------------------- page clues
+def test_page_open_text_does_not_revive_discontinued_programs(conn, cfg, tmp_path, monkeypatch):
+    cfg = early_cfg(cfg, tmp_path)
+    programs = yaml.safe_load((tmp_path / "early_programs.yaml").read_text())
+    programs["programs"][1]["status_hint"] = "possibly discontinued"        # acme-insight
+    (tmp_path / "early_programs.yaml").write_text(yaml.safe_dump(programs))
+    routes = {FEED: (200, []), PAGES["ms"]: (200, page("Info.")),
+              PAGES["acme"]: (200, page("Applications are now open for Insight Day 2027.")), PAGES["old"]: (200, page("Info."))}
+    run_group(conn, cfg, make_http(routes), group="daily")
+    assert card(conn, "acme-insight")["status"] == "possibly discontinued"
+    item = next(i for i in collect_data(conn, cfg)["items"] if i["registry_id"] == "acme-insight")
+    assert item["page"]["signal"] == "open"            # still shown as a chip, to re-check by hand
+
+
 def test_page_signals():
     assert page_signal(["Applications are now open for the 2027 program!"], TODAY)[0] == "open"
     assert page_signal(["Applications for 2025 are closed."], TODAY) == (None, "")     # an old cycle
     assert page_signal(["Applications have closed. Check back in the fall."], TODAY)[0] == "closed"
     assert years_seen(["Summer 2026 recap", "Apply for 2027"], TODAY) == [2026, 2027]
+
+
+def test_empty_main_falls_back_to_the_page():
+    from radar.watcher.text import page_lines
+    html = "<body><main></main><div class='content'><p>Evercore Sophomore Program</p><p>Apply by January 5, 2027</p></div></body>"
+    assert page_lines(html) == ["Evercore Sophomore Program", "Apply by January 5, 2027"]
 
 
 # ------------------------------------------------------- the whole pipeline

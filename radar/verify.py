@@ -54,6 +54,11 @@ def verify_sources(cfg: Config, http: Http, only: str | None = None) -> list[str
         )
         for warning in result.warnings:
             lines.append(f"|  | ⚠️ {_cell(warning)} | | | |")
+        if only:
+            # Checking one source: list everything it found, to eyeball the filters.
+            for item in result.items[:150]:
+                where = "; ".join(item.locations[:2])
+                lines.append(f"|  | • {_cell(f'{item.organization}: {item.title}')} | {_cell(where)} | {item.status or ''} | |")
     return lines
 
 

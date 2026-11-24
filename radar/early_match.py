@@ -77,8 +77,10 @@ class ProgramMatcher:
                 return programs
         return []
 
-    def match(self, org: str, title: str, class_years: list[str] | None = None) -> str | None:
-        """The registry id of the program this posting is for, or None."""
+    def match(self, org: str, title: str, class_years: list[str] | None = None, strict: bool = False) -> str | None:
+        """The registry id of the program this posting is for, or None.
+        strict: only explicit evidence (a match_titles phrase or a shared
+        distinctive word) - used to filter whole job boards."""
         programs = self.candidates(org)
         if not programs:
             return None
@@ -92,7 +94,7 @@ class ProgramMatcher:
         best_score, best = scored[0]
         if best_score and (len(scored) == 1 or scored[1][0] < best_score):
             return best["id"]
-        if len(programs) == 1 and not best_score:
+        if len(programs) == 1 and not best_score and not strict:
             wanted = set(best.get("class_years") or [])
             if not wanted or not class_years or wanted & set(class_years):
                 return best["id"]

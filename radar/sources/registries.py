@@ -209,7 +209,10 @@ def _apply_clues(conn, row, status: str, reason: str, now: datetime) -> tuple[st
         ).fetchone()
         if live:
             return "open", f"Posting is live: {live['title']}"
-    if row["signal"] == "open":
+    # A page's "applications are now open" can be about another program on the
+    # same page, so it never overrides a hand-set "possibly discontinued"
+    # (the card still shows a "page says: open" chip to re-check).
+    if row["signal"] == "open" and status != "possibly discontinued":
         return "open", f'The program page says applications are open: "{row["signal_line"]}"'
     if row["gone_since"]:
         since = datetime.fromisoformat(row["gone_since"].replace("Z", "+00:00"))

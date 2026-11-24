@@ -102,7 +102,7 @@ class PageWatcherSource(Source):
         signal = page_signal(lines, self.today) if kind in CARD_BUILDERS else (None, "")
         note = f"{chars} chars via {method}"
         if signal[0]:
-            note += f", says applications are {signal[0]}"
+            note += f", says applications are {signal[0]}" + (f' ("{signal[1][:120]}")' if conn is None else "")
         if conn is not None:
             diff = snapshot.record_check(conn, entry["id"], lines, self.now, status, method,
                                          entry.get("only_lines_matching"), entry.get("ignore_lines"),

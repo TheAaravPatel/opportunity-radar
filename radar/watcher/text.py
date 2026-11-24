@@ -35,6 +35,13 @@ def page_lines(html: str, selector: str | None = None) -> list[str]:
         tag.insert_after(NavigableString("\n"))
 
     roots = soup.select(selector) if selector else (soup.select("main") or [soup.body or soup])
+    lines = _lines(roots)
+    if not lines and not selector:
+        lines = _lines([soup.body or soup])   # an empty <main> (content elsewhere on the page)
+    return lines
+
+
+def _lines(roots) -> list[str]:
     lines: list[str] = []
     for root in roots:
         for raw in root.get_text(" ").split("\n"):
