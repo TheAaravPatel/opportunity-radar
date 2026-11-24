@@ -12,6 +12,10 @@ on:
         description: "Only check this source id (blank = all sources + registry URLs)"
         required: false
         default: ""
+      discovery_only:
+        description: "Only guess job boards for ats: unknown companies (fast)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -31,13 +35,16 @@ jobs:
         # The input goes through an environment variable (not pasted into the
         # script) so odd input can't be run as shell code.
         run: |
-          if [ -n "$ONLY_SOURCE" ]; then
+          if [ "$DISCOVERY_ONLY" = "true" ]; then
+            python -m radar verify --discovery-only
+          elif [ -n "$ONLY_SOURCE" ]; then
             python -m radar verify --source "$ONLY_SOURCE"
           else
             python -m radar verify
           fi
         env:
           ONLY_SOURCE: ${{ inputs.source }}
+          DISCOVERY_ONLY: ${{ inputs.discovery_only }}
           USAJOBS_API_KEY: ${{ secrets.USAJOBS_API_KEY }}
           USAJOBS_EMAIL: ${{ secrets.USAJOBS_EMAIL }}
       - uses: actions/upload-artifact@v7

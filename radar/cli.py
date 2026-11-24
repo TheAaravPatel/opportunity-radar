@@ -46,6 +46,7 @@ def main(argv: list[str] | None = None) -> int:
     p_verify = sub.add_parser("verify", help="check every source and URL once")
     p_verify.add_argument("--source", default=None)
     p_verify.add_argument("--skip-urls", action="store_true", help="only check sources, not registry URLs")
+    p_verify.add_argument("--discovery-only", action="store_true", help="only guess job boards for ats: unknown companies")
 
     args = parser.parse_args(argv)
     logging.basicConfig(
@@ -84,7 +85,7 @@ def main(argv: list[str] | None = None) -> int:
         from radar.verify import run_verify
 
         http = Http.from_config(cfg)
-        return run_verify(cfg, http, only=args.source, check_urls=not args.skip_urls)
+        return run_verify(cfg, http, only=args.source, check_urls=not args.skip_urls, discovery_only=args.discovery_only)
 
     parser.print_help()
     return 1

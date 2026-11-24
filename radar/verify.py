@@ -97,18 +97,21 @@ def verify_urls(cfg: Config, http: Http) -> list[str]:
     return lines
 
 
-def run_verify(cfg: Config, http: Http, only: str | None = None, check_urls: bool = True) -> int:
+def run_verify(cfg: Config, http: Http, only: str | None = None, check_urls: bool = True, discovery_only: bool = False) -> int:
     lines = ["# Opportunity Radar verification report", "", f"Run date: {today_local().isoformat()}", ""]
-    lines += verify_sources(cfg, http, only)
-    if check_urls and not only:
-        # Separate client with fewer retries so a dead page doesn't stall the report.
-        url_http = Http.from_config(cfg)
-        url_http.max_retries = 1
-        lines += verify_urls(cfg, url_http)
-        # Probing guesses mostly returns 404s, so never retry those requests.
-        probe_http = Http.from_config(cfg)
-        probe_http.max_retries = 0
+    # Probing guesses mostly returns 404s, so never retry those requests.
+    probe_http = Http.from_config(cfg)
+    probe_http.max_retries = 0
+    if discovery_only:
         lines += discovery_report(cfg, probe_http)
+    else:
+        lines += verify_sources(cfg, http, only)
+        if check_urls and not only:
+            # Separate client with fewer retries so a dead page doesn't stall the report.
+            url_http = Http.from_config(cfg)
+            url_http.max_retries = 1
+            lines += verify_urls(cfg, url_http)
+            lines += discovery_report(cfg, probe_http)
     report = "\n".join(lines) + "\n"
     print(report)
     out = ROOT / "out"

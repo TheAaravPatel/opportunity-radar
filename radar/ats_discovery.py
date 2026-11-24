@@ -33,16 +33,26 @@ def slug_candidates(name: str) -> list[str]:
     return list(dict.fromkeys(o for o in options if len(o) >= 4))
 
 
-def count_jobs(data) -> int:
+def jobs_of(data) -> list[dict]:
     if isinstance(data, list):
-        return len(data)
+        return data
     if isinstance(data, dict):
-        return len(data.get("jobs") or [])
-    return 0
+        return data.get("jobs") or []
+    return []
 
 
-def discover(name: str, http: Http) -> list[tuple[str, str, int]]:
-    """[(ats, slug, number of jobs)] for every board that exists."""
+def describe(job: dict) -> str:
+    """'Title (Location)' from any of the three APIs - to tell look-alike companies apart."""
+    title = job.get("title") or job.get("text") or "?"
+    location = job.get("location")
+    if isinstance(location, dict):
+        location = location.get("name")
+    location = location or (job.get("categories") or {}).get("location") or ""
+    return f"{title} ({location})" if location else title
+
+
+def discover(name: str, http: Http) -> list[tuple[str, str, int, list[str]]]:
+    """[(ats, slug, number of jobs, sample "title (location)")] for every board that exists."""
     hits = []
     for slug in slug_candidates(name):
         for ats, url in PROBES.items():
@@ -50,7 +60,8 @@ def discover(name: str, http: Http) -> list[tuple[str, str, int]]:
                 data = http.get_json(url.format(slug=slug))
             except Exception:  # noqa: BLE001 - a 404 just means "not this one"
                 continue
-            hits.append((ats, slug, count_jobs(data)))
+            jobs = jobs_of(data)
+            hits.append((ats, slug, len(jobs), [describe(j) for j in jobs[:3]]))
     return hits
 
 
@@ -59,9 +70,13 @@ def discovery_report(cfg, http: Http) -> list[str]:
     if not unknown:
         return []
     lines = ["", "## Job-board discovery for `ats: unknown` companies", "",
-             "| Company | Boards found (ats:slug, jobs) |", "|---|---|"]
+             "Check the sample jobs: a board with the right name can belong to a different company.", "",
+             "| Company | Board found | Jobs | Sample jobs |", "|---|---|---|---|"]
     for company in unknown:
         hits = discover(company["name"], http)
-        found = ", ".join(f"{ats}:{slug} ({n} jobs)" for ats, slug, n in hits)
-        lines.append(f"| {company['name']} | {found or 'none on Greenhouse/Lever/Ashby - check the careers page (Workday? iCIMS?)'} |")
+        if not hits:
+            lines.append(f"| {company['name']} | none on Greenhouse/Lever/Ashby - check the careers page (Workday? iCIMS?) | | |")
+        for ats, slug, count, samples in hits:
+            sample_text = "; ".join(samples).replace("|", "/")[:250]
+            lines.append(f"| {company['name']} | {ats}:{slug} | {count} | {sample_text} |")
     return lines

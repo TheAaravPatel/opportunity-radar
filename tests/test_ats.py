@@ -156,5 +156,8 @@ def test_our_biotech_list_does_not_duplicate_the_biotech_repo(cfg):
 def test_discovery():
     assert "denali" in slug_candidates("Denali Therapeutics")
     assert "biorad" in slug_candidates("Bio-Rad Laboratories")
-    routes = {"https://boards-api.greenhouse.io/v1/boards/denali/jobs": (200, {"jobs": [{"id": 1}, {"id": 2}]})}
-    assert discover("Denali Therapeutics", make_http(routes)) == [("greenhouse", "denali", 2)]
+    jobs = {"jobs": [{"id": 1, "title": "Research Associate", "location": {"name": "South San Francisco, CA"}}, {"id": 2, "title": "Intern"}]}
+    routes = {"https://boards-api.greenhouse.io/v1/boards/denali/jobs": (200, jobs)}
+    assert discover("Denali Therapeutics", make_http(routes)) == [
+        ("greenhouse", "denali", 2, ["Research Associate (South San Francisco, CA)", "Intern"])
+    ]
