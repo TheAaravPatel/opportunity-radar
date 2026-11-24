@@ -66,7 +66,7 @@ class PageFetcher:
         return parser is None or parser.can_fetch(self.user_agent, url)
 
     # ----------------------------------------------------------------- fetch
-    def fetch(self, url: str, render: str = "auto", selector: str | None = None) -> tuple[str, int, str]:
+    def fetch(self, url: str, render: str = "auto") -> tuple[str, int, str]:
         """Returns (html, http_status, method) where method is "http" or "browser"."""
         if not self.allowed(url):
             raise RobotsDisallowed(f"robots.txt asks bots not to fetch {url}")
@@ -74,7 +74,8 @@ class PageFetcher:
             return self._browser_fetch(url)
         response = self.http.get(url)
         html = response.text
-        if render == "auto" and sum(len(line) for line in page_lines(html, selector)) < EMPTY_PAGE_CHARS:
+        # Judge emptiness on the whole page: a job list can legitimately be short.
+        if render == "auto" and sum(len(line) for line in page_lines(html)) < EMPTY_PAGE_CHARS:
             try:
                 return self._browser_fetch(url)
             except Exception as exc:  # noqa: BLE001 - keep the plain result if the browser can't help

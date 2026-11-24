@@ -78,7 +78,7 @@ class PageWatcherSource(Source):
             snapshot.record_failure(conn, page_id, self.now, error)
 
     def _check(self, fetcher: PageFetcher, conn, entry: dict, kind: str) -> tuple[Item | None, str]:
-        html, status, method = fetcher.fetch(entry["url"], entry.get("render", "auto"), entry.get("selector"))
+        html, status, method = fetcher.fetch(entry["url"], entry.get("render", "auto"))
         lines = page_lines(html, entry.get("selector"))
         chars = sum(len(line) for line in lines)
         if kind == "stanford" and chars < MIN_TEXT_CHARS:
@@ -102,7 +102,9 @@ class PageWatcherSource(Source):
                 found += from_claude
                 note += f", asked Claude ({len(from_claude)} dates)"
         new = [d for d in found if d.date not in known_dates]
-        if new:
+        if new and conn is None:      # Verify report: show the sentence each date came from
+            note += ", found " + "; ".join(f"{d.kind} {d.date}{' (year assumed)' if d.approx else ''} from \"{d.evidence[:140]}\"" for d in new)
+        elif new:
             note += ", found " + ", ".join(f"{d.kind} {d.date}" for d in new)
 
         # Same name / org / place as the registry's entry, so the two merge
