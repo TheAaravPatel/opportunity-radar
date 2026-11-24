@@ -238,11 +238,12 @@ def build_digest(conn: sqlite3.Connection, cfg: Config) -> Digest:
     # 5. Changed pages ----------------------------------------------------------
     digest.page_changes = [
         dict(r) for r in conn.execute(
-            """SELECT p.id, p.url, p.last_changed_at, o.title, o.organization,
+            """SELECT p.id, COALESCE(p.link, p.url) AS url, p.kind, p.last_changed_at,
+                      COALESCE(p.name, p.id) AS title, p.org AS organization,
                       (SELECT diff FROM page_snapshots s WHERE s.page_id = p.id AND s.changed = 1
-                       ORDER BY s.fetched_at DESC LIMIT 1) AS diff
-               FROM pages p LEFT JOIN opportunities o ON o.id = p.opportunity_id
-               WHERE p.last_changed_at > ?""",
+                       ORDER BY s.id DESC LIMIT 1) AS diff
+               FROM pages p
+               WHERE p.last_changed_at > ? ORDER BY p.kind DESC, p.last_changed_at DESC""",
             (since,),
         )
     ]

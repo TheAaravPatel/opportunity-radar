@@ -63,7 +63,8 @@ def collect_data(conn: sqlite3.Connection, cfg: Config) -> dict:
             f"SELECT * FROM deadlines WHERE active = 1 AND opportunity_id IN ({marks}) ORDER BY date", ids
         ):
             deadlines.setdefault(d["opportunity_id"], []).append(
-                {"id": d["id"], "kind": d["kind"], "date": d["date"], "label": d["label"], "approx": bool(d["approx"])}
+                {"id": d["id"], "kind": d["kind"], "date": d["date"], "label": d["label"], "approx": bool(d["approx"]),
+                 "method": d["method"], "evidence": d["evidence"] or ""}
             )
         for s in conn.execute(
             f"SELECT opportunity_id, source_id FROM sightings WHERE active = 1 AND opportunity_id IN ({marks})", ids
@@ -126,6 +127,7 @@ def collect_data(conn: sqlite3.Connection, cfg: Config) -> dict:
         "sources": collect_sources(conn, cfg),
         "manual_links": cfg.get("dashboard.manual_check_links", []) or [],
         "page_changes": collect_page_changes(conn),
+        "watched_pages": collect_watched_pages(conn),
         "suggestions": [dict(s) for s in conn.execute(
             "SELECT id, kind, name, url, why, target_config, found_at FROM suggestions WHERE status = 'pending' ORDER BY found_at DESC"
         )],
@@ -182,12 +184,23 @@ def collect_page_changes(conn: sqlite3.Connection) -> list[dict]:
     """Watched pages that changed in the last 14 days (filled in by the page-watcher)."""
     cutoff = to_iso(now_utc() - timedelta(days=14))
     rows = conn.execute(
-        """SELECT p.id, p.url, p.kind, p.last_changed_at, o.title, o.organization,
+        """SELECT p.id, COALESCE(p.link, p.url) AS url, p.kind, p.last_changed_at, p.fields,
+                  COALESCE(p.name, p.id) AS title, p.org AS organization,
                   (SELECT diff FROM page_snapshots s WHERE s.page_id = p.id AND s.changed = 1
-                   ORDER BY s.fetched_at DESC LIMIT 1) AS diff
-           FROM pages p LEFT JOIN opportunities o ON o.id = p.opportunity_id
+                   ORDER BY s.id DESC LIMIT 1) AS diff
+           FROM pages p
            WHERE p.last_changed_at >= ? ORDER BY p.last_changed_at DESC""",
         (cutoff,),
+    ).fetchall()
+    return [{**dict(r), "fields": [f for f in (r["fields"] or "").split(",") if f]} for r in rows]
+
+
+def collect_watched_pages(conn: sqlite3.Connection) -> list[dict]:
+    """Every page the page-watcher checks, for the Sources tab."""
+    rows = conn.execute(
+        """SELECT id, kind, COALESCE(link, url) AS url, COALESCE(name, id) AS name, org, last_checked_at,
+                  last_changed_at, consecutive_failures, last_error, fetch_method, text_chars
+           FROM pages ORDER BY kind DESC, name"""
     ).fetchall()
     return [dict(r) for r in rows]
 

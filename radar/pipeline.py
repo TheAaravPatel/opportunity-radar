@@ -24,6 +24,7 @@ from radar.models import Item
 from radar.normalize import cities_of, dedupe_key, display_location, is_bay_area, is_chicagoland, match_key
 from radar.travel import TravelClassifier
 from radar.sources import build_source
+from radar.sources.registries import refresh_registry_statuses
 from radar.timeutil import now_iso, today_local
 
 log = logging.getLogger(__name__)
@@ -116,6 +117,10 @@ def run_group(conn: sqlite3.Connection, cfg: Config, http: Http, group: str | No
         report = run_source(conn, cfg, http, preparer, source_id, options)
         log.info(report.summary())
         reports.append(report)
+    # Registry statuses ("open", "closed"...) also depend on deadlines other
+    # sources found - e.g. a date the page-watcher read on the program's page.
+    refresh_registry_statuses(conn, today_local())
+    conn.commit()
     return reports
 
 
@@ -140,6 +145,8 @@ def run_source(conn, cfg: Config, http: Http, preparer: Preparer, source_id: str
         source = build_source(source_id, options, cfg, http)
     except ValueError as exc:
         return RunReport(source_id, ok=False, error=str(exc))
+    # Most sources only fetch; the page-watcher also remembers page snapshots.
+    source.conn = conn
     store.upsert_source(conn, source_id, source.type_name, source.name, source.homepage, ",".join(source_groups(options)))
     run_id = store.start_run(conn, source_id, started)
     conn.commit()

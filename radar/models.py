@@ -40,6 +40,8 @@ class Deadline:
     date: str          # "YYYY-MM-DD"
     label: str = ""
     approx: bool = False   # True when the date is an estimate
+    method: str = ""       # how we know it: manual / structured / regex / llm (blank = the source's default)
+    evidence: str = ""     # the sentence it came from (page-watcher)
 
 
 @dataclass

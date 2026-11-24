@@ -44,9 +44,17 @@ def test_early_programs_registry(cfg):
 
 
 def test_watched_pages(cfg):
-    pages = cfg.load_file("watched_pages.yaml")["pages"]
+    registry = cfg.load_file("watched_pages.yaml")
+    pages, job_pages = registry["pages"], registry.get("job_pages") or []
     check_entries(pages, "name")
-    assert all(p.get("render", "auto") in ("auto", "http", "playwright") for p in pages)
+    check_entries(job_pages, "name")
+    ids = [p["id"] for p in pages + job_pages]
+    assert len(ids) == len(set(ids)), "page ids must be unique across pages and job_pages"
+    for p in pages + job_pages:
+        assert p.get("render", "auto") in ("auto", "http", "playwright"), p["id"]
+        for key in ("only_lines_matching", "ignore_lines"):
+            if p.get(key):
+                re.compile(p[key])   # a broken regex would make the watcher fail every day
 
 
 def test_companies(cfg):

@@ -20,6 +20,7 @@ Status rules (shared by both registries):
 from __future__ import annotations
 
 import calendar
+import json
 from datetime import date, timedelta
 
 from radar.models import Deadline, FetchResult, Item
@@ -27,6 +28,8 @@ from radar.sources.base import Source, register
 from radar.timeutil import to_date_str, today_local
 
 EARLY_WINDOW_DAYS = 14   # "expected soon" starts this many days before the typical month
+STALE_REASON = "Page looks out of date - check it before relying on it"
+REGISTRY_SOURCE_TYPES = ("early_programs_registry", "watched_pages_registry")
 
 
 def expected_window(month: int, today: date) -> tuple[date, date]:
@@ -122,6 +125,40 @@ def _watch_extra(entry: dict) -> dict:
     return {"watch": False, "watch_note": entry.get("watch_note", "")}
 
 
+def refresh_registry_statuses(conn, today: date) -> int:
+    """Recompute registry rows' status from ALL their active deadlines.
+
+    The registry sources only know the dates written in the YAML; the
+    page-watcher may have found more on the program's page. Same rules as
+    registry_status(). Returns how many rows changed.
+    """
+    from radar.store import UNLISTED_REASON   # (imported here to avoid an import loop)
+
+    rows = conn.execute(
+        f"""SELECT o.id, o.status, o.status_reason, o.extra FROM opportunities o
+            JOIN sources s ON s.id = o.primary_source
+            WHERE s.type IN ({", ".join("?" * len(REGISTRY_SOURCE_TYPES))})
+              AND (o.status_reason IS NULL OR o.status_reason != ?)""",
+        (*REGISTRY_SOURCE_TYPES, UNLISTED_REASON),
+    ).fetchall()
+    changed = 0
+    for row in rows:
+        extra = json.loads(row["extra"] or "{}")
+        deadlines = [Deadline(kind=d["kind"], date=d["date"]) for d in conn.execute(
+            "SELECT kind, date FROM deadlines WHERE opportunity_id = ? AND active = 1", (row["id"],))]
+        entry = {"status_hint": extra.get("status_hint", ""), "typical_open_month": extra.get("typical_open_month"),
+                 "notes": extra.get("notes", "")}
+        status, reason = registry_status(entry, deadlines, today)
+        if extra.get("stale") and status == "open":
+            reason = STALE_REASON
+        if (status, reason) != (row["status"], row["status_reason"]):
+            closed_at = "closed_at" if status == "closed" else "NULL"
+            conn.execute(f"UPDATE opportunities SET status = ?, status_reason = ?, closed_at = {closed_at} WHERE id = ?",
+                         (status, reason, row["id"]))
+            changed += 1
+    return changed
+
+
 @register("early_programs_registry")
 class EarlyProgramsRegistry(Source):
     def fetch(self) -> FetchResult:
@@ -181,7 +218,7 @@ def watched_page_items(pages: list[dict], today: date) -> list[Item]:
         status, reason = registry_status(entry, deadlines, today)
         stale = (entry.get("status_hint") or "").lower() == "stale"
         if stale and status == "open":
-            reason = "Page looks out of date - check it before relying on it"
+            reason = STALE_REASON
         items.append(
             Item(
                 source_item_id=entry["id"],
@@ -199,6 +236,7 @@ def watched_page_items(pages: list[dict], today: date) -> list[Item]:
                 status_reason=reason,
                 extra={
                     "notes": (entry.get("notes") or "").strip(),
+                    "status_hint": entry.get("status_hint", ""),
                     "stale": stale,
                     "render": entry.get("render", "auto"),
                     "stanford": True,

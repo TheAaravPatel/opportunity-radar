@@ -44,6 +44,7 @@ class Source:
         self.options = options or {}
         self.cfg = cfg
         self.http = http
+        self.conn = None   # the database; the pipeline sets it (only the page-watcher uses it)
 
     @property
     def name(self) -> str:

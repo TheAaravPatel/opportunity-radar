@@ -215,7 +215,7 @@ def save_items(conn, source_id: str, prepared: list[Prepared], run_id: int, now:
             conn.execute("INSERT OR REPLACE INTO conference_aliases (alias_key, opportunity_id) VALUES (?, ?)", (alias, opp_id))
         _upsert_sighting(conn, opp_id, source_id, p.item, run_id, now)
         for d in p.item.deadlines:
-            _upsert_deadline(conn, opp_id, source_id, d, deadline_method, run_id, now)
+            _upsert_deadline(conn, opp_id, source_id, d, d.method or deadline_method, run_id, now)
     return len(prepared), new
 
 
@@ -278,13 +278,14 @@ def _upsert_sighting(conn, opp_id: int, source_id: str, item: Item, run_id: int,
 
 def _upsert_deadline(conn, opp_id: int, source_id: str, d, method: str, run_id: int, now: str) -> None:
     conn.execute(
-        """INSERT INTO deadlines (opportunity_id, source_id, kind, date, label, approx, method,
+        """INSERT INTO deadlines (opportunity_id, source_id, kind, date, label, approx, method, evidence,
                                   first_seen_at, last_seen_at, last_run_id, active)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
            ON CONFLICT(opportunity_id, kind, date, label) DO UPDATE SET
                approx=excluded.approx, last_seen_at=excluded.last_seen_at,
+               evidence=COALESCE(excluded.evidence, evidence),
                last_run_id=excluded.last_run_id, active=1""",
-        (opp_id, source_id, d.kind, d.date, d.label or "", int(d.approx), method, now, now, run_id),
+        (opp_id, source_id, d.kind, d.date, d.label or "", int(d.approx), method, d.evidence or None, now, now, run_id),
     )
 
 

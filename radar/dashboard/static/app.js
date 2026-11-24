@@ -301,7 +301,7 @@ function deadlineLine(it) {
   const cls = n <= 7 ? "soon" : n <= 14 ? "upcoming" : "";
   const kind = next.kind === "opens" ? "Opens" : next.kind === "event" ? "Event" : "Deadline";
   const more = it.deadlines.filter((d) => d.date >= TODAY).length - 1;
-  return el("div", { class: "deadline-line" },
+  return el("div", { class: "deadline-line", title: next.evidence ? `From the page: "${next.evidence}"` : "" },
     `${kind}: ${fmtDate(next.date)}${next.approx ? " (approx.)" : ""} `,
     el("span", { class: cls, text: `(${inDays(n)})` }),
     next.label ? ` - ${next.label}` : "",
@@ -482,12 +482,26 @@ function deadlinesView() {
     el("p", { class: "result-count" }, "Subscribe in Google Calendar: ", link("deadlines.ics", "deadlines.ics"), " (add by URL)."));
 }
 
+function changeList(changes) {
+  return changes.map((c) => el("details", {},
+    el("summary", {}, `${c.title || c.id} - changed ${ago(c.last_changed_at)} `, link("open page", c.url)), diffBlock(c.diff)));
+}
+
+// Employer job pages (no API) that changed, shown above the Internships list.
+function jobPageChanges(field) {
+  const changes = (DATA.page_changes || []).filter((c) => c.kind === "job_page" && (!field || c.fields.includes(field)));
+  if (!changes.length) return null;
+  return el("div", { class: "panel" }, el("h2", { text: "Employer job pages that changed" }),
+    el("p", { class: "result-count", text: "These employers have no job feed, so the radar watches their job pages. Lines with + are new." }),
+    changeList(changes));
+}
+
 function stanfordView() {
   const items = itemsFor("stanford");
-  const changes = DATA.page_changes || [];
+  const changes = (DATA.page_changes || []).filter((c) => c.kind !== "job_page");
   const changePanel = el("div", { class: "panel" }, el("h2", { text: "Page changed alerts" }),
     changes.length
-      ? changes.map((c) => el("details", {}, el("summary", {}, `${c.title || c.id} - changed ${ago(c.last_changed_at)} `, link("open page", c.url)), diffBlock(c.diff)))
+      ? changeList(changes)
       : el("p", { class: "result-count", text: "No watched page has changed in the last 14 days." }));
   const entries = deadlineEntries(items.filter((it) => it.status !== "closed"));
   return el("div", {}, changePanel,
@@ -550,12 +564,27 @@ function sourcesView() {
     el("td", { "data-label": "Notes" }, s.error ? el("div", { class: "err", text: s.error }) : null,
       (s.warnings || []).map((w) => el("div", { class: "result-count", text: w })))));
   const manual = DATA.manual_links || [];
+  const pages = DATA.watched_pages || [];
+  const pageRows = pages.map((p) => el("tr", {},
+    el("td", { "data-label": "Page" }, el("span", { class: `dot ${p.consecutive_failures ? "failing" : p.last_checked_at ? "ok" : "never-run"}` }),
+      link(p.name, p.url), p.kind === "job_page" ? el("span", { class: "result-count", text: " (job page)" }) : null),
+    el("td", { "data-label": "Last checked", text: p.last_checked_at ? ago(p.last_checked_at) : "never" }),
+    el("td", { "data-label": "Last changed", text: p.last_changed_at ? ago(p.last_changed_at) : "-" }),
+    el("td", { "data-label": "Notes" },
+      p.consecutive_failures ? el("div", { class: "err", text: `${p.last_error || "failed"}${p.consecutive_failures > 1 ? ` (${p.consecutive_failures}x)` : ""}` }) : null,
+      p.fetch_method === "browser" ? el("div", { class: "result-count", text: "needs a browser (JavaScript page)" }) : null)));
   return el("div", {},
     el("div", { class: "panel" }, el("h2", { text: "Source health" }),
       el("table", { class: "health" },
         el("thead", {}, el("tr", {}, ["Source", "Status", "Last success", "Upstream updated", "Items", "Notes"].map((h) => el("th", { text: h })))),
         el("tbody", {}, rows)),
       el("p", { class: "result-count", text: "\"Upstream updated\" is when the source itself last changed; a source counts as stale after 14 days without updates." })),
+    pages.length ? el("details", { class: "panel" }, el("summary", {}, el("b", { text: `Watched pages (${pages.length})` }),
+      ` - ${pages.filter((p) => p.consecutive_failures).length} failing`),
+      el("table", { class: "health" },
+        el("thead", {}, el("tr", {}, ["Page", "Last checked", "Last changed", "Notes"].map((h) => el("th", { text: h })))),
+        el("tbody", {}, pageRows)),
+      el("p", { class: "result-count", text: "Checked once a day. Pages marked \"not auto-checked\" on their cards block bots or need a login." })) : null,
     manual.length ? el("div", { class: "panel" }, el("h2", { text: "Check these by hand" }),
       manual.map((m) => el("p", {}, link(m.name, m.url), ` - ${m.why}`))) : null,
     el("div", { class: "panel" }, el("h2", { text: "Data" }),
@@ -598,7 +627,9 @@ function renderTabs() {
 function renderMain() {
   const main = document.getElementById("main");
   let view;
-  if (state.tab === "internships") view = el("div", {}, state.sub === "early" ? earlyIntro() : null, listView(itemsFor("internships", state.sub)));
+  if (state.tab === "internships") {
+    view = el("div", {}, state.sub === "early" ? earlyIntro() : jobPageChanges(state.sub), listView(itemsFor("internships", state.sub)));
+  }
   else if (state.tab === "stanford") view = stanfordView();
   else if (state.tab === "conferences") view = conferencesView();
   else if (state.tab === "deadlines") view = deadlinesView();

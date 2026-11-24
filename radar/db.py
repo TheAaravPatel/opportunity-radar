@@ -28,13 +28,16 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 # Columns added after the first version. CREATE TABLE IF NOT EXISTS doesn't
 # change a table that already exists (the database on the data branch), so
 # connect() adds any of these that are missing.
 ADDED_COLUMNS = {
     "opportunities": {"chicagoland": "INTEGER NOT NULL DEFAULT 0", "travel": "TEXT", "travel_reason": "TEXT"},
+    # v3: the page-watcher (Phase 4) shows job pages that have no dashboard card.
+    "pages": {"name": "TEXT", "org": "TEXT", "fields": "TEXT", "link": "TEXT",
+              "fetch_method": "TEXT", "text_chars": "INTEGER"},
 }
 
 SCHEMA = """

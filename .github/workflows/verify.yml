@@ -35,6 +35,8 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
+      - name: Install the browser for JavaScript pages (page-watcher check)
+        run: python -m playwright install --with-deps chromium
       - name: Verify
         # The input goes through an environment variable (not pasted into the
         # script) so odd input can't be run as shell code.

@@ -23,6 +23,19 @@
 #   watch        false -> the page-watcher skips it (blocks bots / needs login);
 #                its known deadlines still show up
 #   watch_note   why it isn't watched
+#   selector     optional CSS selector: watch only that part of the page
+#                (default: the page's <main> area)
+#   only_lines_matching  optional regex: only changed lines matching it count
+#                as a change (e.g. "intern|summer" on a job list)
+#   ignore_lines optional regex: changed lines matching it never count
+#
+# What the page-watcher does with each page (daily, radar/watcher/):
+#   * respects robots.txt; plain request first, headless browser only for
+#     pages that need JavaScript
+#   * saves the text; when it changes, the dashboard + email show what changed
+#   * reads deadlines off the page ("Applications due February 1, 2027") and
+#     adds them to the program's card, calendar and 14/7/2-day reminders.
+#     Dates written here in `deadlines` stay the trusted ones.
 #
 # Seeded 2026-11-24 via web search; the verify workflow loads each URL for real.
 # Login-only pages (e.g. the bsurp.stanford.edu project list) are deliberately
@@ -385,3 +398,41 @@ pages:
     render: auto
     status_hint: active
     notes: Tech Ethics & Policy fellowships and other HAI programs.
+
+# =============================================================================
+# Employer job pages with no public job API
+# =============================================================================
+# Watched the same way, but they don't get a dashboard card: when a matching
+# line appears (a new "Summer Analyst Intern"), you get a "page changed" alert
+# in the Internships tab and the email. Same fields as above, plus:
+#   link   the page to open in your browser, if `url` is an inner address
+# =============================================================================
+
+job_pages:
+
+  - id: analysis-group-jobs
+    name: Analysis Group analyst & intern openings
+    org: Analysis Group
+    fields: [econ]
+    # iCIMS shows the job list inside a frame; `url` is the frame's own page.
+    url: https://analystcareers-analysisgroup.icims.com/jobs/search?ss=1&in_iframe=1
+    link: https://analystcareers-analysisgroup.icims.com/jobs/search
+    selector: li.iCIMS_JobCardItem h3        # just the job titles
+    only_lines_matching: "intern|summer|research assistant|sophomore|first[- ]year"
+
+  - id: brookings-jobs
+    name: Brookings Institution jobs & internships
+    org: Brookings Institution
+    fields: [econ]
+    url: https://careers-brookings.icims.com/jobs/search?ss=1&in_iframe=1
+    link: https://careers-brookings.icims.com/jobs/search
+    selector: li.iCIMS_JobCardItem h3
+    only_lines_matching: "intern|summer|research assistant|scholar|fellow"
+
+  - id: bates-white-openings
+    name: Bates White openings (Summer Consultant Program)
+    org: Bates White
+    fields: [econ]
+    url: https://www.bateswhite.com/careers/current-openings
+    only_lines_matching: "summer|intern|undergrad"
+

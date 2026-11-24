@@ -28,12 +28,18 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
+      # Headless Chromium for the page-watcher, used only for pages that are
+      # built by JavaScript (most pages are read with a plain request).
+      - name: Install the browser for JavaScript pages
+        run: python -m playwright install --with-deps chromium
       - name: Load database from the data branch
         run: bash scripts/load-db.sh
-      - name: Daily sources (registries, watched pages, conferences)
+      - name: Daily sources (registries, page-watcher, econ, conferences)
         run: python -m radar fetch --group daily
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          USAJOBS_API_KEY: ${{ secrets.USAJOBS_API_KEY }}
+          USAJOBS_EMAIL: ${{ secrets.USAJOBS_EMAIL }}
       - name: Build dashboard
         run: python -m radar dashboard
       - name: Send the email digest

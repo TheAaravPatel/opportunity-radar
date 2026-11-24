@@ -52,9 +52,11 @@ Nothing new.
 None new.
 {% endfor %}
 
-== Stanford pages that changed ==
+== Watched pages that changed ==
 {% for p in d.page_changes %}
-* {{ p.title or p.id }}  {{ p.url }}
+* {{ p.title or p.id }}{% if p.kind == "job_page" %} (job page){% endif %}  {{ p.url }}
+{% if p.diff %}{{ p.diff[:800] }}
+{% endif %}
 {% else %}
 No watched page changed.
 {% endfor %}
