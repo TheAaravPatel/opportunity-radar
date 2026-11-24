@@ -16,6 +16,7 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup
 
+from radar.ats_discovery import discovery_report
 from radar.config import ROOT, Config
 from radar.http import BlockedError, Http
 from radar.sources import build_source
@@ -104,6 +105,10 @@ def run_verify(cfg: Config, http: Http, only: str | None = None, check_urls: boo
         url_http = Http.from_config(cfg)
         url_http.max_retries = 1
         lines += verify_urls(cfg, url_http)
+        # Probing guesses mostly returns 404s, so never retry those requests.
+        probe_http = Http.from_config(cfg)
+        probe_http.max_retries = 0
+        lines += discovery_report(cfg, probe_http)
     report = "\n".join(lines) + "\n"
     print(report)
     out = ROOT / "out"

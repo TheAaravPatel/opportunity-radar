@@ -34,3 +34,19 @@ def test_parse_real_simplify_rows():
     assert off and all(not any("summer" in t.lower() for t in i.terms) for i in off)
     assert all(i.posted_at and len(i.posted_at) == 10 for i in result.items)
     assert all("Incomplete" not in i.degrees for i in result.items)
+
+
+BIOTECH_OPTIONS = {
+    "fields_by_category": {"Computational Biology, Data & AI": ["biotech", "cs"]},
+    "default_fields": ["biotech"],
+}
+
+
+def test_parse_biotech_repo_rows():
+    rows = load_fixture("biotech_listings.json")
+    result = parse_listings(rows, BIOTECH_OPTIONS, TODAY)
+    assert len(result.items) == sum(1 for r in rows if r["active"])
+    comp_bio = [i for i in result.items if i.subcategory == "Computational Biology, Data & AI"]
+    assert comp_bio and all(i.fields == ["biotech", "cs"] for i in comp_bio)
+    coop = [i for i in result.items if "Co-op / Off-Cycle" in i.terms]
+    assert coop and all(i.extra["off_season"] for i in coop)   # kept, and flagged off-season

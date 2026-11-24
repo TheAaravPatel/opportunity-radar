@@ -106,8 +106,10 @@ Add an entry to `config/companies.yaml`. Find the ATS from the company's careers
 | `jobs.ashbyhq.com/acme` | `ats: ashby, slug: acme` |
 | `acme.wd5.myworkdayjobs.com/AcmeCareers` | `ats: workday, tenant: acme, host: wd5, site: AcmeCareers` |
 
-Biotech companies already covered by the biotech GitHub repo don't need an entry. Keep the
-Workday list short (see the warning at the top of the file). Company polling turns on in Phase 2.
+Biotech companies already covered by the biotech GitHub repo don't need an entry (a test checks,
+and the fetcher re-checks that repo's `companies.json` every run). Keep the Workday list short (see
+the warning at the top of the file). Don't know the ATS? Add it with `ats: unknown`: the
+**Verify sources** report then tries likely Greenhouse/Lever/Ashby board names and lists the hits.
 
 ### Add an early-career program
 Add an entry to `config/early_programs.yaml` (every field is explained at the top of that file):

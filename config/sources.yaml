@@ -60,6 +60,31 @@ sources:
     credit: "Tech internship listings courtesy of Jobs Every Hour:"
     default_fields: [cs]
 
+  # ------------------------------------------------------- biotech / life sci ----
+  biotech_repo:
+    type: listings_json
+    group: jobs
+    name: vinaynarahari Summer 2027 Biotech Internships
+    homepage: https://github.com/vinaynarahari/Summer2027-Biotech-Internships
+    # Same format as Simplify. Off-season rows ("Co-op / Off-Cycle") are in the same file.
+    url: https://raw.githubusercontent.com/vinaynarahari/Summer2027-Biotech-Internships/main/.github/scripts/listings.json
+    fields_by_category:
+      "Computational Biology, Data & AI": [biotech, cs]
+      "Research & Lab Science": [biotech]
+      "Clinical, Regulatory & Medical Affairs": [biotech]
+      "Engineering, Manufacturing & Quality": [biotech]
+      # Strategy/finance/consulting titles also get "econ" from the keyword rules.
+      "Business, Commercial & Operations": [biotech]
+    default_fields: [biotech]
+
+  biotech_companies:
+    type: ats_companies
+    group: jobs
+    name: Bay Area biotech job boards (config/companies.yaml)
+    groups: [biotech]
+    # Skip any company the biotech repo has started polling itself.
+    skip_if_covered_by: https://raw.githubusercontent.com/vinaynarahari/Summer2027-Biotech-Internships/main/companies.json
+
   # ------------------------------------------------------ Stanford + registry ----
   # These read our own YAML registries so their known deadlines show up right
   # away. (The page-watcher that checks the pages themselves comes later.)

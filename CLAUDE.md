@@ -41,6 +41,8 @@ radar/
   store.py         DB writes: dedupe, sightings, deadlines, safe closing
   db.py            SQLite schema (one file, `CREATE TABLE IF NOT EXISTS`)
   sources/         one module per source type, registered with @register("type")
+                   ats_*.py = one job-board API each; companies.py loops companies.yaml
+  ats_discovery.py guesses Greenhouse/Lever/Ashby board names for `ats: unknown` companies
   classify.py, eligibility.py, early_detect.py, normalize.py, timeutil.py
   dashboard/       build.py + templates/index.html.j2 + static/app.js, app.css
   digest.py + templates/digest.*.j2
@@ -104,7 +106,7 @@ Use `RADAR_NOW=2027-01-05T15:00:00Z` to pretend it's another date (tests do this
 
 ## Build phases (status)
 1. ✅ SimplifyJobs end to end + zshah101 + Jobs Every Hour; registries' known deadlines
-2. ⏳ Biotech repo + Greenhouse/Lever/Ashby/Workday fetchers
+2. ✅ Biotech repo + Greenhouse/Lever/Ashby/Workday fetchers (`ats_companies` source, `skip_if_covered_by`, board discovery in verify)
 3. ⏳ Econ: PREDOC, Fed (Workday), USAJobs, econ RSS, EconJobMarket (disabled), consulting ATS
 4. ⏳ Page-watcher (snapshot/diff/Playwright, deadline extraction) for Stanford pages
 5. ⏳ Early-programs registry watching + keyword detection + bank/trading ATS (incl. Oracle)
