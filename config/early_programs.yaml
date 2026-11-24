@@ -187,7 +187,9 @@ programs:
     fields: [econ]
     class_years: [sophomore]
     format: paid summer
-    url: https://www.jpmorganchase.com/careers/explore-opportunities/programs/jpmcfellowship
+    # The program's own page (.../programs/jpmcfellowship) returned 404 after the
+    # 2026 cycle; this programs list loads and will show the 2027 edition.
+    url: https://www.jpmorganchase.com/careers/explore-opportunities/programs
     typical_open_month: 11
     status_hint: renamed
     notes: >-
@@ -529,6 +531,8 @@ programs:
     status_hint: possibly discontinued
     notes: Several sources say cancelled for the 2027 cycle, one says reinstated. Historically open Jan-Mar.
     last_verified: 2026-11-24 verified-search
+    watch: false
+    watch_note: mckinsey.com times out for automated requests (bot protection) - check by hand.
 
   - id: cornerstone-first-year-foundations
     firm: Cornerstone Research

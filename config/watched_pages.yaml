@@ -45,6 +45,8 @@ pages:
       Project list usually updated near the end of January; 2026 student
       applications ran Jan 27-Feb 10. 2027 dates not posted yet.
       /summer/ and /applications/ are a JavaScript app (needs a browser).
+    watch: false
+    watch_note: curis.stanford.edu doesn't accept connections from GitHub's servers (likely campus-only). Check by hand around late January; the CS research page below is watched.
 
   - id: curis-summer-projects
     name: CURIS summer project list
@@ -55,6 +57,8 @@ pages:
     class_years: []
     render: playwright
     status_hint: active
+    watch: false
+    watch_note: curis.stanford.edu doesn't accept connections from GitHub's servers (likely campus-only). Check by hand around late January; the CS research page below is watched.
 
   - id: curis-pure
     name: CURIS PURE (paid research during the school year)
@@ -68,6 +72,8 @@ pages:
     deadlines:
       - {kind: application, date: 2027-01-08, label: PURE deadline (winter)}
       - {kind: application, date: 2027-04-02, label: PURE deadline (spring)}
+    watch: false
+    watch_note: curis.stanford.edu doesn't accept connections from GitHub's servers (likely campus-only). Check by hand around late January; the CS research page below is watched.
 
   - id: cs-research-for-undergrads
     name: CS undergraduate research opportunities
@@ -205,15 +211,19 @@ pages:
     notes: Spring 2026 edition (8 hrs/week x 10 weeks, $1,500) was due Feb 27; expect late Feb 2027.
 
   - id: eso-undergrad
-    name: Stanford Education & STEM Outreach - undergraduate programs
-    org: Stanford Education & STEM Outreach
-    url: https://oso.stanford.edu/programs/undergraduate-students
+    name: Stanford Medicine high school & undergraduate programs
+    org: Stanford Medicine
+    url: https://med.stanford.edu/education/high-school-and-undergraduate-programs.html
     type: research program
     fields: [biotech]
     class_years: []
     render: auto
     status_hint: active
-    notes: The office moved from eso.stanford.edu (no longer resolves) to oso.stanford.edu. Lists SSRP-Amgen and other summer programs.
+    notes: >-
+      Replaces the Education & STEM Outreach page: neither eso.stanford.edu nor
+      oso.stanford.edu resolves from GitHub's servers (checked 2026-11-24). Lists
+      undergraduate programs such as Canary CREST (early cancer detection) and the
+      Cardiovascular Institute Summer Research Program.
 
   # ---------------------------------------------------------------- econ ----
   - id: siepr-ugrf

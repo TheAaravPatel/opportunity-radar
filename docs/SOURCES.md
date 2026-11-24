@@ -139,9 +139,9 @@ matched the parser)**, and both registries. Of the 73 registry URLs:
 
 | Problem | Entries | What we did |
 |---|---|---|
-| Wrong / moved URL | Morgan Stanley (2), JPMorganChase Fellowship, Capital One Summits (`campus.capitalone.com` no longer resolves), Stanford ESO (`eso.stanford.edu` → `oso.stanford.edu`), King Center, Deloitte | URLs corrected |
+| Wrong / moved URL | Morgan Stanley (2), JPMorganChase Fellowship (program page 404s after the 2026 cycle → programs list), Capital One Summits (`campus.capitalone.com` no longer resolves), Stanford ESO (neither `eso.` nor `oso.stanford.edu` resolves → Stanford Medicine's undergraduate programs page), King Center, Deloitte | URLs corrected and re-verified |
 | Redirects to a Stanford login | Econ dept undergrad research page, ChemH Undergraduate Scholars | Econ page: `watch: false`; ChemH: watch its public SOLO listing instead |
 | Bot protection blocks GitHub's servers | Citadel + Citadel Securities (4), Bio-X USRP, HRT (HTTP 403) | `watch: false` (deadlines kept by hand; Citadel/HRT postings come from Simplify/zshah101 and HRT's Greenhouse board) |
-| Timed out | CURIS (3 pages: connection timeout), McKinsey | Re-checked by the weekly verify run; handled when the page-watcher lands (Phase 4) |
+| Unreachable from GitHub's servers | CURIS (3 pages: connection times out on every run, likely campus-only), McKinsey (read timeout every run) | `watch: false`; CURIS deadlines added by hand when posted (usually late January); the CS research-opportunities page is watched instead |
 | Consistent with "possibly discontinued" | Goldman Virtual Insight (404), Google STEP + Meta University (empty JavaScript shells) | Already marked |
 | No 2026/2027 mention (evergreen pages) | SEO, ColorStack, Code2040, O4U, IMC Launchpad, CDDRL, HAI, VPUE departmental list, CS research page | Fine for now; the page-watcher will flag real changes |
