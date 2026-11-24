@@ -7,7 +7,9 @@ source does can stop the whole pipeline.
 
 from __future__ import annotations
 
+import json
 import logging
+import os
 import sqlite3
 import traceback
 from dataclasses import dataclass, field
@@ -117,8 +119,23 @@ def run_group(conn: sqlite3.Connection, cfg: Config, http: Http, group: str | No
     return reports
 
 
+def missing_secrets(options: dict) -> list[str]:
+    """Environment variables (GitHub Secrets) a source needs that aren't set."""
+    return [name for name in options.get("requires_env", []) or [] if not os.environ.get(name)]
+
+
 def run_source(conn, cfg: Config, http: Http, preparer: Preparer, source_id: str, options: dict) -> RunReport:
     started = now_iso()
+    missing = missing_secrets(options)
+    if missing:
+        # Not a failure (nothing is broken) and nothing gets closed: the
+        # source just waits until you add the secret(s).
+        note = f"waiting for GitHub Secret(s): {', '.join(missing)}"
+        store.upsert_source(conn, source_id, options.get("type", ""), options.get("name", source_id),
+                            options.get("homepage", ""), ",".join(source_groups(options)))
+        conn.execute("UPDATE sources SET warnings = ? WHERE id = ?", (json.dumps([note]), source_id))
+        conn.commit()
+        return RunReport(source_id, ok=True, warnings=[note])
     try:
         source = build_source(source_id, options, cfg, http)
     except ValueError as exc:

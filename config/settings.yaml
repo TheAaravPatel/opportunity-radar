@@ -31,6 +31,21 @@ dashboard:
     - name: NBER research assistant positions (not at NBER)
       url: https://www.nber.org/career-resources/research-assistant-positions-not-nber
       why: NBER's terms of use prohibit automated monitoring - check by hand.
+    - name: Analysis Group analyst & intern jobs (iCIMS)
+      url: https://analystcareers-analysisgroup.icims.com/jobs/search
+      why: No public job API. The page-watcher (next phase) will watch it for you.
+    - name: Brookings Institution jobs (iCIMS)
+      url: https://careers-brookings.icims.com/jobs/search
+      why: No public job API. The page-watcher (next phase) will watch it for you.
+    - name: Bates White openings
+      url: https://www.bateswhite.com/careers-openings.html
+      why: No public job API. The page-watcher (next phase) will watch it for you.
+    - name: Edgeworth Economics careers
+      url: https://www.edgewortheconomics.com/careers
+      why: No public job API. The page-watcher (next phase) will watch it for you.
+    - name: Mathematica jobs
+      url: https://careers.mathematica.org/search-jobs
+      why: No public job API. The page-watcher (next phase) will watch it for you.
 
 digest:
   enabled: true

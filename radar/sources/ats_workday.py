@@ -43,7 +43,7 @@ def fetch_company(company: dict, http: Http) -> list:
                 path = posting.get("externalPath")
                 # An empty search term means "this whole board is student-focused"
                 # (e.g. Citi's early-careers board), so keep everything on it.
-                if path and (term == "" or is_student_title(posting.get("title", ""))):
+                if path and (term == "" or is_student_title(posting.get("title", ""), company)):
                     found.setdefault(path, posting)
             if len(postings) < PAGE or (page + 1) * PAGE >= total:
                 break

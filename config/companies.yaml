@@ -18,6 +18,8 @@
 #   search   keywords used to filter titles (Workday/Oracle send them as the search
 #            text; others filter locally). Default: [intern]
 #   early_career_only  true -> keep only postings matching early-career keywords
+#   extra_titles       also keep titles containing these (e.g. research assistant)
+#   title_org_map      {text in title: real employer} for shared boards (the Fed)
 #   enabled  false -> skip (keeps the entry for reference)
 #   notes    why it's here / anything odd
 #
@@ -107,6 +109,22 @@ companies:
     group: econ
     fields: [econ]
     search: [intern, research assistant]
+    extra_titles: [research assistant, research analyst]
+    title_org_map:
+      SF Fed: Federal Reserve Bank of San Francisco
+      San Francisco Fed: Federal Reserve Bank of San Francisco
+      Chicago Fed: Federal Reserve Bank of Chicago
+      New York Fed: Federal Reserve Bank of New York
+      NY Fed: Federal Reserve Bank of New York
+      Boston Fed: Federal Reserve Bank of Boston
+      Philadelphia Fed: Federal Reserve Bank of Philadelphia
+      Cleveland Fed: Federal Reserve Bank of Cleveland
+      Richmond Fed: Federal Reserve Bank of Richmond
+      Atlanta Fed: Federal Reserve Bank of Atlanta
+      St. Louis Fed: Federal Reserve Bank of St. Louis
+      Minneapolis Fed: Federal Reserve Bank of Minneapolis
+      Kansas City Fed: Federal Reserve Bank of Kansas City
+      Dallas Fed: Federal Reserve Bank of Dallas
     notes: >-
       All 12 regional banks share this board; the bank is in the title prefix
       (e.g. "SF Fed"). Workday - best effort; Simplify lists many Fed roles too.
@@ -120,6 +138,7 @@ companies:
     group: econ
     fields: [econ]
     search: [intern, research assistant]
+    extra_titles: [research assistant]
     notes: Workday Government Cloud (not the shared Reserve Bank board). Internships are US-citizens-only.
 
   - name: The Brattle Group
@@ -169,6 +188,8 @@ companies:
     site: Urban-Careers
     group: econ
     fields: [econ]
+    search: [intern, research assistant]
+    extra_titles: [research assistant]
     notes: Newest posting seen on wd115 - may be migrating; verify checks both.
 
   - name: RAND Corporation
@@ -178,6 +199,8 @@ companies:
     site: External_Career_Site
     group: econ
     fields: [econ]
+    search: [intern, research assistant]
+    extra_titles: [research assistant]
 
   - name: Pew Research Center
     ats: workday
@@ -186,6 +209,8 @@ companies:
     site: CenterExternal
     group: econ
     fields: [econ]
+    search: [intern, research assistant]
+    extra_titles: [research assistant]
 
   # No public API -> watched as pages instead (Phase 3): Analysis Group (iCIMS),
   # Brookings (iCIMS), Bates White (viRecruit), Edgeworth (Paylocity), Mathematica.

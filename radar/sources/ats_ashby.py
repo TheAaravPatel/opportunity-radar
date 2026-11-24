@@ -23,7 +23,7 @@ def fetch_company(company: dict, http: Http) -> list:
         if job.get("isListed") is False:
             continue
         title = job.get("title") or ""
-        if not (is_student_title(title) or (job.get("employmentType") or "").lower() == "intern"):
+        if not (is_student_title(title, company) or (job.get("employmentType") or "").lower() == "intern"):
             continue
         secondary = [s.get("location") for s in job.get("secondaryLocations") or [] if isinstance(s, dict)]
         items.append(

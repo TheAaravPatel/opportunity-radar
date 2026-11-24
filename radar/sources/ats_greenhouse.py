@@ -24,7 +24,7 @@ def fetch_company(company: dict, http: Http) -> list:
     items = []
     for job in data.get("jobs", []) or []:
         title = job.get("title") or ""
-        if not is_student_title(title):
+        if not is_student_title(title, company):
             continue
         location = (job.get("location") or {}).get("name") if isinstance(job.get("location"), dict) else None
         items.append(

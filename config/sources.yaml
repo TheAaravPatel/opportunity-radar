@@ -131,3 +131,76 @@ sources:
     url: https://raw.githubusercontent.com/Jose-Gael-Cruz-Lopez/BadgeUp/main/README.md
     repo: Jose-Gael-Cruz-Lopez/BadgeUp
 
+  # ----------------------------------------------------------------- economics ----
+  predoc_ra:
+    type: predoc
+    group: daily
+    name: PREDOC part-time & summer RA opportunities
+    homepage: https://www.predoc.org/ra-opportunities
+    url: https://www.predoc.org/ra-opportunities
+    fields: [econ]
+
+  predoc_fulltime:
+    type: predoc
+    group: daily
+    enabled: false          # full-time post-BA predoc jobs - turn on senior year
+    name: PREDOC full-time predoctoral positions
+    homepage: https://www.predoc.org/opportunities
+    url: https://www.predoc.org/opportunities
+    fields: [econ]
+
+  econ_companies:
+    type: ats_companies
+    group: jobs
+    name: Econ consulting, policy & Fed job boards (config/companies.yaml)
+    groups: [econ]
+
+  usajobs:
+    type: usajobs
+    group: daily
+    name: USAJobs - federal student economics roles
+    homepage: https://www.usajobs.gov/
+    # Waits (doesn't fail) until both GitHub Secrets are added.
+    requires_env: [USAJOBS_API_KEY, USAJOBS_EMAIL]
+
+  econ_ug_blog:
+    type: rss_feed
+    group: daily
+    name: Econ UG Blog (UC San Diego economics opportunities)
+    homepage: https://econugblog.wordpress.com/
+    url: https://econugblog.wordpress.com/feed/
+    fields: [econ]
+    title_must_match: "intern|research assistant|\\bra\\b|predoc|fellow|scholar|program|challenge|competition|conference|summit|insight|analyst"
+    max_age_days: 60
+    keep_missing_days: 60   # the feed only shows its latest ~10 posts
+
+  economic_misfit:
+    type: rss_feed
+    group: daily
+    name: The Economic Misfit (econ RA / predoc posts)
+    homepage: https://theeconomicmisfit.com/
+    url: https://theeconomicmisfit.com/feed/
+    fields: [econ]
+    # Mostly research articles and postdoc jobs - keep only student-level posts.
+    title_must_match: "research assistant|\\bra\\b|predoc|pre-doc|intern|undergrad|summer"
+    title_must_not_match: "postdoc|post-doc|faculty|professor"
+    max_age_days: 60
+    keep_missing_days: 60
+
+  appliedeconjobs:
+    type: rss_feed
+    group: daily
+    enabled: false          # Substack's bot protection blocks GitHub's servers (checked 2026-11-24)
+    name: Applied Econ Jobs (Substack)
+    homepage: https://appliedeconjobs.substack.com/
+    url: https://appliedeconjobs.substack.com/feed
+    fields: [econ]
+
+  econjobmarket:
+    type: econjobmarket
+    group: daily
+    enabled: false          # EJM's terms: ask EJM before re-displaying ads publicly
+    name: EconJobMarket (official JSON feed; pre-doc / RA ads only)
+    homepage: https://econjobmarket.org/market
+    url: https://backend.econjobmarket.org/data/zz_public/json/Ads
+

@@ -166,6 +166,8 @@ def collect_sources(conn: sqlite3.Connection, cfg: Config) -> list[dict]:
 def _health_state(row: dict, options: dict) -> str:
     if not options.get("enabled", True):
         return "disabled"
+    if any("waiting for GitHub Secret" in w for w in _loads(row.get("warnings"), [])):
+        return "needs secret"
     if not row:
         return "never run"
     if row.get("consecutive_failures"):

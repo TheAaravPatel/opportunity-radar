@@ -35,8 +35,28 @@ _YEAR_FIRST = re.compile(r"\b(20\d\d)\s+(summer|fall|autumn|winter|spring)\b", r
 _DAYS_AGO = re.compile(r"(\d+)\+?\s*days?\s+ago", re.I)
 
 
-def is_student_title(title: str) -> bool:
-    return bool(STUDENT_TITLE.search(title or "")) and not NOT_STUDENT_TITLE.search(title or "")
+def is_student_title(title: str, company: dict | None = None) -> bool:
+    """Internship-type title? A company can also accept e.g. "research assistant"
+    roles via `extra_titles` in companies.yaml (think tanks, the Fed)."""
+    title = title or ""
+    if NOT_STUDENT_TITLE.search(title):
+        return False
+    if STUDENT_TITLE.search(title):
+        return True
+    extra = (company or {}).get("extra_titles") or []
+    return any(phrase.lower() in title.lower() for phrase in extra)
+
+
+_RA_TITLE = re.compile(r"research assistant|pre-?doc|research analyst|research associate", re.I)
+
+
+def organization_for(company: dict, title: str) -> str:
+    """Shared boards host many employers (all 12 Federal Reserve Banks post on
+    one Workday board); `title_org_map` names the real employer from the title."""
+    for needle, org in (company.get("title_org_map") or {}).items():
+        if needle.lower() in (title or "").lower():
+            return org
+    return company["name"]
 
 
 def terms_from_title(title: str) -> list[str]:
@@ -89,12 +109,13 @@ def make_item(company: dict, ats: str, job_id: str, title: str, url: str, locati
               posted_at: str | None = None, text: str = "", remote: bool = False) -> Item:
     """Build the Item every ATS fetcher returns, filled in from the company entry."""
     key = company.get("slug") or company.get("tenant") or company.get("host") or company["name"]
+    is_ra = company.get("group") == "econ" and _RA_TITLE.search(title or "") and not STUDENT_TITLE.search(title or "")
     return Item(
         source_item_id=f"{ats}:{key}:{job_id}",
         title=title.strip(),
-        organization=company["name"],
+        organization=organization_for(company, title),
         url=url,
-        type="industry internship",
+        type="RA" if is_ra else "industry internship",
         fields=list(company.get("fields") or []),
         locations=locations,
         remote=remote or is_remote(locations),

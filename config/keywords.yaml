@@ -152,6 +152,9 @@ eligibility:
     - pattern: '\b(high school|high-school|middle school|k-12|grades? (9|10|11|12))\b'
       points: -40
       reason: For high school students
+    - pattern: "\\b(post-?baccalaureate|already have a bachelor'?s degree|bachelor'?s degree (is )?required|recent (college )?graduates)\\b"
+      points: -30
+      reason: For college graduates (needs a bachelor's degree)
 
 # Words that mark a posting as an early-career (freshman/sophomore) program.
 # Used to flag postings in every job feed and match them to the registry.

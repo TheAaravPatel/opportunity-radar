@@ -33,7 +33,7 @@ def fetch_company(company: dict, http: Http) -> list:
         title = posting.get("text") or ""
         categories = posting.get("categories") or {}
         intern_commitment = "intern" in (categories.get("commitment") or "").lower()
-        if not (is_student_title(title) or intern_commitment):
+        if not (is_student_title(title, company) or intern_commitment):
             continue
         created = posting.get("createdAt")
         items.append(
