@@ -1,5 +1,7 @@
 # Opportunity Radar
 
+[![Tests](https://github.com/TheAaravPatel/opportunity-radar/actions/workflows/ci.yml/badge.svg)](https://github.com/TheAaravPatel/opportunity-radar/actions/workflows/ci.yml) · **[Open the dashboard](https://theaaravpatel.github.io/opportunity-radar/)**
+
 Collects the most up-to-date **internships, early-career (freshman/sophomore) programs, Stanford
 research opportunities, and conferences** in economics, computer science and biotech; refreshes
 itself on GitHub Actions; and shows what's **new** and what's **due soon**:
