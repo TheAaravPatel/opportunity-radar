@@ -45,6 +45,7 @@ radar/
                    rss_feed.py = generic RSS/Atom reader (config-only blog sources)
   ats_discovery.py guesses Greenhouse/Lever/Ashby board names for `ats: unknown` companies
   classify.py, eligibility.py, early_detect.py, normalize.py, timeutil.py
+  early_match.py   early-career postings -> registry programs (+ keyword-detection suggestions)
   dashboard/       build.py + templates/index.html.j2 + static/app.js, app.css
   digest.py + templates/digest.*.j2
   watcher/         page-watcher: fetch.py (robots.txt, http, Playwright fallback), text.py,
@@ -119,6 +120,17 @@ Use `RADAR_NOW=2027-01-05T15:00:00Z` to pretend it's another date (tests do this
   the page (approx). Claude is asked only when a page mentions deadlines but no date matched
   (cached by text, `max_extract_calls_per_run`). After every run `refresh_registry_statuses`
   recomputes registry statuses from all active deadlines.
+- **Early programs** (Phase 5): `early_detect` flags titles (strong words alone; weak words only
+  right before a program word; never "experienced/MBA/PhD"). After every run
+  `link_early_postings` matches open early postings to programs by firm (`match_orgs`, prefix
+  "Citi"~"Citigroup") + distinctive name/aka word or `match_titles` (stored in `early_programs`);
+  unmatched program-like postings become `suggestions` (expire when the posting closes).
+  `refresh_registry_statuses` then applies clues in order - known dates win; a live posting
+  (matched, or a feed sighting merged into the card) -> open; the page says "applications are
+  open" -> open (never over a hand-set "possibly discontinued"); page 404 for 7 days -> possibly
+  discontinued - and records status changes for the digest's "Now open" (first run = baseline).
+  `early_career_only` boards keep only early titles or *strict* registry matches. Oracle fetcher
+  in `ats_oracle.py` (JPMC site CX_1; Goldman's Oracle site has no campus jobs -> disabled).
 - **Schema changes**: add new columns to `ADDED_COLUMNS` in db.py so the database already on
   the data branch is upgraded in place.
 - **Claude API** (later phases): model from `settings.yaml` (`claude-opus-5-5`), only for
@@ -148,6 +160,7 @@ Use `RADAR_NOW=2027-01-05T15:00:00Z` to pretend it's another date (tests do this
    Workday consulting boards; no-API employers are manual links until the page-watcher
 4. ✅ Page-watcher: 22 Stanford pages + 3 employer job pages (Analysis Group, Brookings, Bates White);
    snapshot/diff, Playwright fallback, robots.txt, regex+dateparser deadlines, Claude fallback
-5. ⏳ Early-programs registry watching + keyword detection + bank/trading ATS (incl. Oracle)
+5. ✅ Early programs: page-watching of 42 program pages (open/closed wording, gone pages), posting ->
+   program matching + suggestions, `early_career_companies` boards (Workday, Greenhouse, Ashby, Oracle)
 6. ✅ Conferences & hackathons (built before 3-5 at the owner's request): conferences.yaml (41), student-opportunities, BadgeUp; name+year dedupe with TBA matching and `aka` aliases
 7. ⏳ Weekly discovery (Claude + web search) + approval flow

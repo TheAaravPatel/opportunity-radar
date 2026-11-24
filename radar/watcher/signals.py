@@ -19,6 +19,8 @@ CLOSED = re.compile(
     r"\b(?:applications?\s+(?:is|are|have|has)\s+(?:now\s+)?closed|no\s+longer\s+accepting\s+applications|"
     r"application\s+(?:period|window|portal)\s+(?:has\s+|is\s+)?(?:now\s+)?(?:ended|closed))", re.I)
 YEAR = re.compile(r"\b(20\d\d)\b")
+# "Graduate recruitment applications are open year-round" isn't about student programs.
+NOT_ABOUT_PROGRAMS = re.compile(r"\b(?:year-round|graduate|mba|experienced|full-time|lateral)\b", re.I)
 
 
 def _current_line(line: str, today: date) -> bool:
@@ -31,7 +33,8 @@ def page_signal(lines: list[str], today: date) -> tuple[str | None, str]:
     found: dict[str, str] = {}
     for line in lines:
         for name, pattern in (("open", OPEN), ("closed", CLOSED)):
-            if name not in found and pattern.search(line) and _current_line(line, today):
+            if name not in found and pattern.search(line) and _current_line(line, today) \
+                    and not NOT_ABOUT_PROGRAMS.search(line):
                 found[name] = line[:200]
     if len(found) == 1:                       # both -> the page is ambiguous; say nothing
         name, line = next(iter(found.items()))

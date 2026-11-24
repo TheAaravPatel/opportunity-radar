@@ -197,3 +197,32 @@ Not watched: Edgeworth (openings load from Paylocity in a JavaScript frame) and 
 (careers site returns HTTP 403 to bots) stay manual links; CURIS, Bio-X, the Econ department page
 and the Citadel/HRT/McKinsey program pages are `watch: false` as before.
 
+## Early-career programs (built 2026-11-24, checked live from GitHub Actions)
+
+**Program pages** (page-watcher): 41 of 42 watched pages load; Goldman's Virtual Insight page
+returns 404 (already marked possibly discontinued). Evercore and SIG pages need the browser.
+Wording found on the pages:
+
+| Page | Says | Effect |
+|---|---|---|
+| Goldman Possibilities Series, Emerging Leaders | "Applications are now closed." | "page says: closed" chip |
+| Optiver FutureFocus | "Applications are open" | open |
+| MLT Career Prep | "The Career Prep Application is now open!" | open |
+| BCG Bridge to Consulting | "Graduate recruitment applications are open year-round." | ignored (not about student programs) |
+
+**Job boards** (`early_career_companies`, early-career postings only):
+
+| Board | Result |
+|---|---|
+| JPMorganChase (Oracle `jpmc.fa.oraclecloud.com`, site CX_1) | ✅ works; no freshman/sophomore titles right now |
+| Goldman Sachs (Oracle `hdpc`, site CX_1) | experienced hires only (0 "intern" results) → disabled; program pages watched |
+| Jane Street, HRT, IMC, Optiver, DRW, Five Rings, Akuna, Jump, Tower, Point72 (Greenhouse), Old Mission (Ashby) | ✅ all answer; no early-career titles right now (their regular internships come from Simplify) |
+| Citi, Capital One, BlackRock, NVIDIA (Workday) | 🚫 Workday bot challenge from GitHub's servers (best effort; never closes items) |
+
+Lessons from the first run: a firm with a single registry program must not let all its
+internships through the early-career filter (IMC showed 22, HRT 6) - board filtering uses strict
+matching; and "Point72 Academy ... for Experienced Professionals" is excluded by the
+experienced/MBA/PhD rule. The 7 early-career flags in the existing data were all biotech false
+positives ("Internship Program: ... Drug Discovery Intern"), fixed by requiring the weak word to
+come right before the program word.
+

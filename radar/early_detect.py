@@ -18,6 +18,9 @@ from radar.classify import compile_phrases
 
 # "First Year Analyst" at a bank means a NEW GRAD, not a first-year student.
 _NEW_GRAD_LEVEL = re.compile(r"\b(?:first|1st|second|2nd)[- ]year\s+(?:analyst|associate|consultant|ib)\b", re.I)
+# Never early-career, whatever else the title says ("Point72 Academy ... for
+# Experienced Professionals").
+_NOT_STUDENTS = re.compile(r"\b(?:experienced|professionals?|mba|ph\.?\s?d|postdoc\w*|graduate students?)\b", re.I)
 
 
 class EarlyCareerDetector:
@@ -36,6 +39,8 @@ class EarlyCareerDetector:
                 self.weak.pattern + r"(?:[\s:/&-]+[\w'.]+){0,2}?[\s:/&-]+" + self.program_words.pattern, re.I)
 
     def is_early(self, title: str) -> bool:
+        if _NOT_STUDENTS.search(title or ""):
+            return False
         text = _NEW_GRAD_LEVEL.sub(" ", title or "")
         if self.strong and self.strong.search(text):
             return True

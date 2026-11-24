@@ -32,6 +32,7 @@ def test_weak_words_need_a_program_word_right_after():
     assert not detector.is_early("2027 Summer Internship Program: AI/ML for Drug Discovery Intern")
     assert not detector.is_early("2027 Future Talent Program - Discovery Neuroscience - Co-op")
     assert not detector.is_early("First Year Analyst - Investment Banking")     # a new-grad level
+    assert not detector.is_early("Point72 Academy Investment Analyst Program for Experienced Professionals")
 
 
 def test_program_matcher():
@@ -122,6 +123,8 @@ def test_page_signals():
     assert page_signal(["Applications are now open for the 2027 program!"], TODAY)[0] == "open"
     assert page_signal(["Applications for 2025 are closed."], TODAY) == (None, "")     # an old cycle
     assert page_signal(["Applications have closed. Check back in the fall."], TODAY)[0] == "closed"
+    assert page_signal(["The Career Prep Application is now open!"], TODAY)[0] == "open"           # MLT, live
+    assert page_signal(["Graduate recruitment applications are open year-round."], TODAY) == (None, "")  # BCG, live
     assert years_seen(["Summer 2026 recap", "Apply for 2027"], TODAY) == [2026, 2027]
 
 

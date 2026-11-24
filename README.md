@@ -154,8 +154,22 @@ Add an entry to `config/early_programs.yaml` (every field is explained at the to
     status_hint: active
     deadlines:
       - {kind: application, date: 2027-10-01, label: Application deadline}
+    match_orgs: [Acme Corp]           # optional: other names job feeds use for the firm
 ```
 Never delete an old program: set `status_hint: possibly discontinued` instead.
+
+What happens to it automatically:
+- **Its page is watched daily** (like Stanford pages): new dates on the page are added, the
+  wording "Applications are now open" marks it open, and a page that has been gone (HTTP 404)
+  for a week marks it "possibly discontinued".
+- **Job postings are matched to it.** When a feed (SimplifyJobs, a bank's or trading firm's job
+  board) posts an early-career job at the same firm whose title shares a distinctive word with
+  the program's name or `aka` ("Sophomore Insight Day 2027"), the card shows "Live posting" with
+  the link, the status becomes open, and the email says "Now open". If a program's postings are
+  titled differently, add `match_titles: ["phrase"]`.
+- **Unknown programs are suggested.** An early-career posting that looks like a program (insight
+  day, summit, discovery program...) at a firm that isn't in the registry appears on the
+  **Suggested sources** tab with a draft entry you can paste into this file.
 
 ### Add a Stanford page to watch
 Add an entry to `config/watched_pages.yaml` under `pages:` with `id`, `name`, `org`, `url`,
