@@ -11,7 +11,9 @@ SLUG = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 def test_every_source_type_exists(cfg):
     for source_id, options in cfg.sources.items():
         assert options.get("type") in SOURCE_TYPES, source_id
-        assert options.get("group") in ("jobs", "daily", "weekly"), source_id
+        groups = options.get("group")
+        groups = [groups] if isinstance(groups, str) else groups
+        assert groups and set(groups) <= {"jobs", "daily", "weekly"}, source_id
 
 
 def check_entries(entries, name_key):

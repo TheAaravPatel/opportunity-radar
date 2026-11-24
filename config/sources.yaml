@@ -3,7 +3,8 @@
 # =============================================================================
 # Each entry is   <source id>:  {type, group, enabled, ...options}
 #   type     which module in radar/sources/ handles it (its @register name)
-#   group    when it runs: "jobs" (every 6 hours) or "daily" (each morning)
+#   group    when it runs: "jobs" (every 6 hours), "daily" (each morning), or a
+#            list like [jobs, daily] for both
 #   enabled  false -> skipped (kept for reference)
 #   name     display name on the dashboard; homepage = credit/info link
 # Adding a source = write one module in radar/sources/ + add one entry here.
@@ -62,14 +63,16 @@ sources:
   # ------------------------------------------------------ Stanford + registry ----
   # These read our own YAML registries so their known deadlines show up right
   # away. (The page-watcher that checks the pages themselves comes later.)
+  # They only read local files, so they run with every workflow: statuses like
+  # "opening soon" stay current and every dashboard build includes them.
   stanford_pages:
     type: watched_pages_registry
-    group: daily
+    group: [jobs, daily]
     name: Watched Stanford pages (config/watched_pages.yaml)
     file: watched_pages.yaml
 
   early_programs:
     type: early_programs_registry
-    group: daily
+    group: [jobs, daily]
     name: Early-career program registry (config/early_programs.yaml)
     file: early_programs.yaml

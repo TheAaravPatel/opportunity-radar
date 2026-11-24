@@ -143,7 +143,7 @@ def collect_sources(conn: sqlite3.Connection, cfg: Config) -> list[dict]:
                 "id": source_id,
                 "name": options.get("name", source_id),
                 "homepage": options.get("homepage", ""),
-                "group": options.get("group", ""),
+                "group": options.get("group", "") if isinstance(options.get("group"), str) else ",".join(options.get("group") or []),
                 "enabled": options.get("enabled", True),
                 "state": state,
                 "last_success": row.get("last_success_at"),

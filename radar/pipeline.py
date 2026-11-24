@@ -78,6 +78,12 @@ class Preparer:
         )
 
 
+def source_groups(options: dict) -> list[str]:
+    """A source's `group` can be one name ("jobs") or a list ([jobs, daily])."""
+    group = options.get("group", [])
+    return [group] if isinstance(group, str) else list(group or [])
+
+
 def enabled_sources(cfg: Config, group: str | None = None, only: str | None = None) -> dict[str, dict]:
     chosen = {}
     for source_id, options in cfg.sources.items():
@@ -85,7 +91,7 @@ def enabled_sources(cfg: Config, group: str | None = None, only: str | None = No
             continue
         if not only and not options.get("enabled", True):
             continue
-        if group and not only and options.get("group") != group:
+        if group and not only and group not in source_groups(options):
             continue
         chosen[source_id] = options
     return chosen
@@ -107,7 +113,7 @@ def run_source(conn, cfg: Config, http: Http, preparer: Preparer, source_id: str
         source = build_source(source_id, options, cfg, http)
     except ValueError as exc:
         return RunReport(source_id, ok=False, error=str(exc))
-    store.upsert_source(conn, source_id, source.type_name, source.name, source.homepage, options.get("group", ""))
+    store.upsert_source(conn, source_id, source.type_name, source.name, source.homepage, ",".join(source_groups(options)))
     run_id = store.start_run(conn, source_id, started)
     conn.commit()
 
