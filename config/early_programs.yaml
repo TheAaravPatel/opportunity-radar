@@ -766,3 +766,18 @@ programs:
     status_hint: active
     notes: For women in tech, any year; free membership. 2027 fellowship details not verified.
     last_verified: 2026-11-24 unverified
+
+  # Added 2026-11-24 from suggestion #8 (discovery)
+  - id: bloomberg-first-year-insights
+    firm: Bloomberg
+    program: First Year Insights
+    type: early-career program
+    fields: [cs, econ]
+    class_years: [freshman]
+    url: https://www.bloomberg.com/company/career/first-year-insights/
+    location: Multi-session program; format and location for 2026-27 not yet posted
+    status_hint: active
+    notes: A Bloomberg program built for first-year undergraduates that combines finance, data and engineering
+      careers, which suits a freshman interested in economics and CS. The 2026-27 dates aren't posted yet,
+      so check the page.
+    last_verified: 2026-11-24 found by weekly discovery (Claude web search) - check before relying on it
