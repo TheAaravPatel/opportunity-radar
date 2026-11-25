@@ -1,7 +1,13 @@
 """Weekly discovery: Claude searches the web for opportunities we don't track yet.
 
-Runs once a week (.github/workflows/discovery.yml) and only when
-settings.yaml `discovery.enabled` is true and ANTHROPIC_API_KEY is set.
+Two ways to run it:
+  * Claude Code task (no API key): a scheduled Claude Code session runs
+    `python -m radar discovery-brief`, does the web research itself, and
+    sends its finds to the import-findings workflow, which calls
+    `store_findings()` here. See docs/discovery-task.md.
+  * API (needs ANTHROPIC_API_KEY): `python -m radar discover` (discovery.yml),
+    when settings.yaml `discovery.enabled` is true. Described below.
+Either way, finds go through the same checks and land on the Suggested tab.
 
 Two requests to Claude:
   1. research - Claude uses the web_search tool (at most
@@ -204,6 +210,72 @@ def payload_for(s: dict, today: date) -> dict | None:
     return {k: v for k, v in entry.items() if v not in (None, "", [], 0)}
 
 
+def focus_for(today: date) -> tuple[str, str]:
+    """This week's focus area (one per ISO week, in turn)."""
+    return FOCUS_AREAS[today.isocalendar().week % len(FOCUS_AREAS)]
+
+
+def clean_findings(data, limit: int) -> list[dict]:
+    """Finds sent in from outside (the Claude Code task, via the import-findings
+    workflow) are untrusted: keep only known keys, fill defaults, enforce the
+    allowed values and lengths. Anything malformed is dropped."""
+    items = data.get("suggestions", []) if isinstance(data, dict) else data
+    props = EXTRACT_SCHEMA["properties"]["suggestions"]["items"]["properties"]
+    out = []
+    for raw in items if isinstance(items, list) else []:
+        if not isinstance(raw, dict):
+            continue
+        s = {}
+        for key, spec in props.items():
+            value = raw.get(key)
+            if spec["type"] == "string":
+                value = str(value or "").strip()[:500]
+                if "enum" in spec and value not in spec["enum"]:
+                    value = {"kind": "", "type": "other", "travel_covered": "unknown", "ats": "none"}[key]
+            elif spec["type"] == "integer":
+                value = value if isinstance(value, int) and 0 <= value <= 12 else 0
+            elif key == "deadlines":
+                kinds = spec["items"]["properties"]["kind"]["enum"]
+                value = [{"kind": d.get("kind"), "date": str(d.get("date", "")), "label": str(d.get("label", ""))[:80]}
+                         for d in value or [] if isinstance(d, dict) and d.get("kind") in kinds
+                         and re.fullmatch(r"20\d\d-\d\d-\d\d", str(d.get("date", "")))]
+            else:   # lists of enum strings (fields, class_years)
+                allowed = spec["items"]["enum"]
+                value = [v for v in value or [] if v in allowed] if isinstance(value, list) else []
+            s[key] = value
+        if s["kind"] and s["name"] and s["url"]:
+            out.append(s)
+    return out[:limit]
+
+
+def brief(cfg, today: date | None = None) -> str:
+    """Everything the weekly Claude Code session needs, as one Markdown text."""
+    from radar.eligibility import class_for_grad_year
+
+    today = today or today_local()
+    focus, focus_text = focus_for(today)
+    school_year = f"{today.year}-{str(today.year + 1)[2:]}" if today.month >= 8 else f"{today.year - 1}-{str(today.year)[2:]}"
+    max_items = int(cfg.get("discovery.max_suggestions", 8))
+    rules = RESEARCH_SYSTEM.format(
+        grad_year=cfg.grad_year, class_year=class_for_grad_year(cfg.grad_year, today) or "student",
+        school_year=school_year, summer=today.year + (1 if today.month >= 8 else 0), max_items=max_items)
+    known = known_items(cfg)[2][focus]
+    return "\n".join([
+        f"# Opportunity Radar discovery brief - week of {today.isoformat()}",
+        "", f"**This week's focus ({focus}):** {focus_text}.",
+        "", f"**Search budget:** at most {int(cfg.get('discovery.max_searches', 15))} web searches. "
+            f"Report at most {max_items} finds; fewer is fine.",
+        "", "## Rules", "", rules,
+        "", "## Already tracked - skip these", "", *[f"- {k}" for k in known if k],
+        "", "## Output",
+        "", "A JSON object `{\"suggestions\": [...]}`; each item has exactly these keys "
+            "(use \"\", [], 0 or \"unknown\" when you don't know; dates are YYYY-MM-DD):",
+        "", "```json", json.dumps(EXTRACT_SCHEMA["properties"]["suggestions"]["items"], indent=1), "```",
+        "", f'Send it by running the GitHub Actions workflow `import-findings.yml` with inputs '
+            f'`findings` = that JSON (one line), `focus` = `{focus}`, `searches` = how many searches you used.',
+    ])
+
+
 # --------------------------------------------------------------------- run
 class Discovery:
     def __init__(self, conn, cfg):
@@ -284,10 +356,8 @@ class Discovery:
                 set_meta(self.conn, "last_discovery", json.dumps({"at": now_iso(), "not_run": reason}))
                 self.conn.commit()
             return {"not_run": reason}
-        focus, focus_text = FOCUS_AREAS[today.isocalendar().week % len(FOCUS_AREAS)]
-        urls, names, by_focus = known_items(self.cfg)
-        for row in self.conn.execute("SELECT name, url FROM suggestions"):   # every status: never re-suggest a rejected one
-            urls.add(url_key(row["url"] or ""))
+        focus, focus_text = focus_for(today)
+        by_focus = known_items(self.cfg)[2]
         import anthropic
 
         try:
@@ -300,6 +370,16 @@ class Discovery:
         except anthropic.APIConnectionError as exc:
             return self._failed(f"could not reach the Anthropic API: {exc}"[:300], dry_run)
 
+        return self.store_findings(found, focus, searches, today, dry_run)
+
+    def store_findings(self, found: list[dict], focus: str, searches: int, today: date | None = None,
+                       dry_run: bool = False, via: str = "") -> dict:
+        """Check each find (https, allowed site, not already tracked or ever suggested)
+        and store the good ones as pending suggestions with a draft config entry."""
+        today = today or today_local()
+        urls, names, _ = known_items(self.cfg)
+        for row in self.conn.execute("SELECT name, url FROM suggestions"):   # every status: never re-suggest a rejected one
+            urls.add(url_key(row["url"] or ""))
         added, skipped = [], []
         for s in found:
             reason = self._reject_reason(s, urls, names)
@@ -317,7 +397,8 @@ class Discovery:
                      s["url"], s["why"][:500], TARGETS.get(s["kind"]) if payload else None,
                      json.dumps(payload) if payload else None, now_iso()),
                 )
-        summary = {"at": now_iso(), "focus": focus, "searches": searches, "found": len(found), "added": added, "skipped": skipped}
+        summary = {"at": now_iso(), "focus": focus, "searches": searches, "found": len(found), "added": added,
+                   "skipped": skipped, **({"via": via} if via else {})}
         if not dry_run:
             set_meta(self.conn, "last_discovery", json.dumps(summary))
             self.conn.commit()

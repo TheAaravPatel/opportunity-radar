@@ -589,8 +589,8 @@ function suggestedView() {
       ? `Weekly discovery failed ${ago(last.at)}: ${last.error}.`
       : last.not_run
       ? `Weekly discovery didn't run ${ago(last.at)}: ${last.not_run}.`
-      : `Last discovery ${ago(last.at)}: ${last.searches} web searches about ${last.focus.replace("_", " ")}s, ${last.added.length} new.` })
-      : el("p", { class: "result-count", text: "Weekly discovery hasn't run yet (it needs the ANTHROPIC_API_KEY secret)." }));
+      : `Last discovery ${ago(last.at)}${last.via ? ` (${last.via})` : ""}: ${last.searches} web searches about ${last.focus.replace("_", " ")}s, ${last.added.length} new.` })
+      : el("p", { class: "result-count", text: "Weekly discovery hasn't run yet (a scheduled Claude Code task runs it on Sundays)." }));
   if (!list.length) return el("div", {}, header, el("div", { class: "empty", text: "No suggestions waiting." }));
   return el("div", {}, header, el("div", { class: "cards" }, list.map((s) => el("article", { class: "card" },
     el("h3", { class: "card-title" }, link(s.name, s.url)),

@@ -53,13 +53,15 @@ radar/
   llm.py           Claude wrapper: llm_cache, per-run caps, JSON-schema output, refusal fallback
   discovery.py     weekly Claude web search -> suggestions (research call, then structured extraction)
   approve.py       approve/reject suggestions: insert the draft entry into the right YAML block
+                   (weekly discovery itself: docs/discovery-task.md, a scheduled Claude Code task)
   verify.py        live check of every source + registry URL (no DB writes)
   probe.py         outline any public URL's HTML/JSON/feed (Verify workflow `probe_urls` input)
 tests/             pytest; fixtures are real samples captured from sources
 docs/SOURCES.md    source verification report (what exists, formats, caveats)
 scripts/           load-db.sh / save-db.sh (database ↔ `data` branch)
-.github/workflows/ jobs.yml (6-hourly), daily.yml (pages + digest), discovery.yml (weekly),
-                   approve.yml (issue -> decision), verify.yml, ci.yml
+.github/workflows/ jobs.yml (6-hourly), daily.yml (pages + digest), import-findings.yml (finds from
+                   the weekly Claude Code task), approve.yml (issue -> decision), discovery.yml
+                   (API version, manual only), verify.yml, ci.yml
 ```
 
 ## Commands
@@ -135,7 +137,14 @@ Use `RADAR_NOW=2027-01-05T15:00:00Z` to pretend it's another date (tests do this
   A firm's only program is NOT matched by default (Bain's CREW posting isn't BEL).
   `early_career_only` boards keep only early titles or registry matches. Oracle fetcher
   in `ats_oracle.py` (JPMC site CX_1; Goldman's Oracle site has no campus jobs -> disabled).
-- **Discovery + approvals** (Phase 7): `discover` rotates one focus area per ISO week
+- **Discovery + approvals** (Phase 7): the owner has NO API key, so weekly discovery is a
+  scheduled Claude Code task (fresh session, Sundays) following docs/discovery-task.md: it runs
+  `python -m radar discovery-brief` (focus, rules, known items, schema - generated from code),
+  researches with its own web search, and dispatches `import-findings.yml` with the JSON;
+  `import-findings` runs `clean_findings` (inputs are untrusted: known keys, enums, lengths only)
+  and `Discovery.store_findings` (same checks as below). `llm.enabled` and `discovery.enabled`
+  (the API paths) are false; discovery.yml is manual-only. API version, if a key is ever added:
+  `discover` rotates one focus area per ISO week
   (early_program / stanford_page / conference / source). Request 1 streams Claude with
   `web_search_20260209` (`max_uses` = `discovery.max_searches`, LinkedIn/Indeed/Handshake blocked);
   a `pause_turn` is resumed with the SAME tools (editing tools would invalidate Opus 5.5's thinking)

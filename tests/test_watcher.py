@@ -202,6 +202,7 @@ def test_claude_reads_deadlines_the_rules_cant(conn, cfg, tmp_path, monkeypatch)
     from radar.llm import Claude
 
     cfg = watcher_cfg(cfg, tmp_path)
+    cfg.settings["llm"]["enabled"] = True          # off in settings.yaml (no key); on for this test
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
     asked = []
 

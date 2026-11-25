@@ -1,0 +1,77 @@
+# Receives the weekly discovery finds from the scheduled Claude Code task
+# (docs/discovery-task.md) and puts them on the dashboard's Suggested tab.
+#
+# Only people with write access can start a workflow (that's you, or a Claude
+# Code session acting for you). The finds are still treated as untrusted
+# data: `import-findings` keeps only known fields and runs the same checks
+# as discovery (https, allowed sites, not already tracked or ever suggested).
+# Nothing reaches the config until you approve it.
+name: Import discovery finds
+
+on:
+  workflow_dispatch:
+    inputs:
+      findings:
+        description: 'JSON: {"suggestions": [...]} (format: python -m radar discovery-brief)'
+        required: true
+      focus:
+        description: "This week's focus area"
+        type: choice
+        options: [early_program, stanford_page, conference, source]
+        default: early_program
+      searches:
+        description: "How many web searches were used"
+        type: number
+        default: 0
+
+permissions:
+  contents: write                # save the database to the data branch
+  pages: write
+  id-token: write
+
+concurrency:
+  group: radar-data
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Load database from the data branch
+        run: bash scripts/load-db.sh
+      - name: Store the finds as suggestions
+        # Inputs go through environment variables, never pasted into the
+        # script, so odd text can't run as shell code.
+        env:
+          FINDINGS: ${{ inputs.findings }}
+          FOCUS: ${{ inputs.focus }}
+          SEARCHES: ${{ inputs.searches }}
+        run: |
+          mkdir -p out
+          printf '%s' "$FINDINGS" > out/findings.json
+          python -m radar import-findings out/findings.json --focus "$FOCUS" --searches "${SEARCHES:-0}"
+      - name: Build dashboard
+        run: python -m radar dashboard
+      - name: Save database to the data branch
+        run: bash scripts/save-db.sh
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    needs: import
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

@@ -8,8 +8,10 @@ Commands
   digest     build the daily email and send it (or --dry-run to write out/digest.html)
   verify     fetch every source + load every registry URL once, print a report;
              writes nothing to the database (used by the "Verify sources" workflow)
-  discover   weekly: Claude searches the web for new opportunities -> Suggested tab
-             (--dry-run: print what it found, store nothing)
+  discover   weekly (needs ANTHROPIC_API_KEY): Claude searches the web for new
+             opportunities -> Suggested tab (--dry-run: print, store nothing)
+  discovery-brief            this week's instructions for the Claude Code discovery task
+  import-findings FILE       store the finds that task sends (import-findings workflow)
   approve ID / reject ID     decide on a suggestion (approve adds it to the config)
   decide "Approve suggestion #42"   the same, from a GitHub issue title (approve workflow)
 
@@ -57,6 +59,11 @@ def main(argv: list[str] | None = None) -> int:
 
     p_discover = sub.add_parser("discover", help="weekly web search for new opportunities (needs ANTHROPIC_API_KEY)")
     p_discover.add_argument("--dry-run", action="store_true")
+    sub.add_parser("discovery-brief", help="print this week's discovery instructions (for the Claude Code task)")
+    p_import = sub.add_parser("import-findings", help="store finds sent by the Claude Code discovery task")
+    p_import.add_argument("file", help="JSON file: {\"suggestions\": [...]}")
+    p_import.add_argument("--focus", default="")
+    p_import.add_argument("--searches", type=int, default=0)
     for name in ("approve", "reject"):
         p = sub.add_parser(name, help=f"{name} a suggestion by its number")
         p.add_argument("id", type=int)
@@ -117,6 +124,28 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(summary, indent=2))
         # A failed run still exits 0 so the workflow saves the database and the
         # dashboard shows the error; the summary above says what went wrong.
+        return 0
+
+    if args.command == "discovery-brief":
+        from radar.discovery import brief
+
+        print(brief(cfg))
+        return 0
+
+    if args.command == "import-findings":
+        import json
+
+        from radar.discovery import Discovery, clean_findings
+
+        try:
+            data = json.loads(Path(args.file).read_text(encoding="utf-8") or "{}")
+        except json.JSONDecodeError as exc:
+            print(f"findings are not valid JSON: {exc}")
+            return 1
+        found = clean_findings(data, int(cfg.get("discovery.max_suggestions", 8)))
+        summary = Discovery(db.connect(args.db), cfg).store_findings(
+            found, args.focus or "unknown", args.searches, via="Claude Code task")
+        print(json.dumps(summary, indent=2))
         return 0
 
     if args.command in ("approve", "reject", "decide"):

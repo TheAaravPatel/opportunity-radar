@@ -1,12 +1,12 @@
-# Once a week: Claude searches the web for programs, pages, conferences and
-# sources we don't track yet. Finds go to the dashboard's Suggested tab; you
-# approve or reject each one (see approve.yml). Needs the ANTHROPIC_API_KEY
-# secret; without it the step just says "skipped". At most 15 web searches.
-name: Weekly discovery
+# Discovery through the Claude API: Claude searches the web for programs,
+# pages, conferences and sources we don't track yet. NEEDS the
+# ANTHROPIC_API_KEY secret, so it has no schedule: weekly discovery runs as
+# a scheduled Claude Code task instead (docs/discovery-task.md +
+# import-findings.yml). If you get an API key, set discovery.enabled: true
+# and add a schedule here, e.g.  schedule: [{cron: "23 17 * * 0"}]
+name: Weekly discovery (API key version)
 
 on:
-  schedule:
-    - cron: "23 17 * * 0"      # Sundays 17:23 UTC (9:23 am Pacific standard time)
   workflow_dispatch: {}
 
 permissions:

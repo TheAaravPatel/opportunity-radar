@@ -66,10 +66,17 @@ def finding(**overrides):
     return {**base, **overrides}
 
 
+def api_cfg():
+    """The API version of discovery is off in settings.yaml (no key); switch it on for these tests."""
+    cfg = load_config()
+    cfg.settings["discovery"]["enabled"] = True
+    return cfg
+
+
 @pytest.fixture
 def discovery(conn, monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
-    return Discovery(conn, load_config())
+    return Discovery(conn, api_cfg())
 
 
 def test_research_resumes_a_paused_turn_within_the_search_budget(discovery):
@@ -123,7 +130,8 @@ def test_discovery_adds_only_new_allowed_finds(discovery, conn):
 
 def test_discovery_is_off_without_a_key(conn, monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    assert Discovery(conn, load_config()).run(today=TODAY) == {"not_run": "the ANTHROPIC_API_KEY secret is not set"}
+    assert Discovery(conn, api_cfg()).run(today=TODAY) == {"not_run": "the ANTHROPIC_API_KEY secret is not set"}
+    assert Discovery(conn, load_config()).run(today=TODAY) == {"not_run": "discovery.enabled is false in settings.yaml"}
 
 
 def test_a_rejected_key_is_explained_not_crashed(conn, monkeypatch):
@@ -131,7 +139,7 @@ def test_a_rejected_key_is_explained_not_crashed(conn, monkeypatch):
     import httpx
 
     monkeypatch.setenv("ANTHROPIC_API_KEY", "  sk-ant-api03-abc\n")
-    discovery = Discovery(conn, load_config())
+    discovery = Discovery(conn, api_cfg())
     request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
 
     def fail(**kwargs):
@@ -250,3 +258,47 @@ def test_dashboard_has_what_the_buttons_need(conn):
     data = collect_data(conn, load_config())
     assert data["repo"] == "TheAaravPatel/opportunity-radar"
     assert data["suggestions"][0]["payload"] == {"id": "acme-day"}
+
+
+# ----------------------------------------------- Claude Code task (no API key)
+def test_brief_has_what_the_task_needs():
+    from radar.discovery import brief
+
+    text = brief(load_config(), TODAY)
+    assert "This week's focus" in text and "at most 15 web searches" in text
+    assert "import-findings.yml" in text and '"travel_covered"' in text
+    assert "Never suggest LinkedIn" in text
+
+
+def test_imported_findings_are_cleaned_and_checked(conn, tmp_path):
+    from radar.cli import main
+
+    findings = {"suggestions": [
+        finding(),                                                     # good
+        {**finding(name="Weird", url="https://w.example.com"), "kind": "early_program", "fields": ["econ", "astrology"],
+         "deadlines": [{"kind": "application", "date": "soon"}], "typical_open_month": 99, "extra": "ignored"},
+        finding(name="Job ad", url="https://www.indeed.com/viewjob?jk=1"),   # never Indeed
+        {"kind": "nonsense", "name": "x", "url": "https://x.example.com"},   # unknown kind
+        "not even an object",
+    ]}
+    path = tmp_path / "findings.json"
+    path.write_text(json.dumps(findings))
+    db_path = tmp_path / "radar.db"
+    assert main(["--db", str(db_path), "import-findings", str(path), "--focus", "early_program", "--searches", "11"]) == 0
+
+    from radar import db
+    conn2 = db.connect(db_path)
+    rows = {r["name"]: r for r in conn2.execute("SELECT * FROM suggestions")}
+    assert set(rows) == {"Acme Capital: Sophomore Discovery Day", "Acme Capital: Weird"}
+    weird = json.loads(rows["Acme Capital: Weird"]["payload"])
+    assert weird["fields"] == ["econ"] and "deadlines" not in weird and "typical_open_month" not in weird
+    last = json.loads(conn2.execute("SELECT value FROM meta WHERE key='last_discovery'").fetchone()[0])
+    assert last["via"] == "Claude Code task" and last["searches"] == 11 and len(last["skipped"]) == 1
+
+
+def test_bad_json_is_refused(tmp_path):
+    from radar.cli import main
+
+    path = tmp_path / "findings.json"
+    path.write_text("{not json")
+    assert main(["--db", str(tmp_path / "radar.db"), "import-findings", str(path)]) == 1

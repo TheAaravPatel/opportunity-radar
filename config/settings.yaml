@@ -53,9 +53,9 @@ digest:
   max_new_per_field: 15           # list at most this many new items per field
 
 llm:
-  # Claude is only used for things keyword rules can't handle. Everything
-  # quietly turns off when ANTHROPIC_API_KEY isn't set.
-  enabled: true
+  # Claude API use inside the radar (reading deadlines the date rules can't).
+  # Off: there is no API key. Set true if you ever add ANTHROPIC_API_KEY.
+  enabled: false
   model: claude-opus-5-5
   refusal_fallback: true          # retry a (rare) declined request on a fallback model
   classify_batch_size: 20         # titles per classification call
@@ -63,7 +63,10 @@ llm:
   max_extract_calls_per_run: 5
 
 discovery:
-  enabled: true                   # weekly web search for new sources (needs ANTHROPIC_API_KEY)
+  # Weekly discovery runs as a scheduled Claude Code task (docs/discovery-task.md),
+  # which needs no API key. `enabled` is only for the API version
+  # (`python -m radar discover`, needs ANTHROPIC_API_KEY) - off.
+  enabled: false
   max_searches: 15                # web searches per weekly run (about $0.01 each, plus Claude's tokens)
   max_suggestions: 8              # at most this many new suggestions per week
 
