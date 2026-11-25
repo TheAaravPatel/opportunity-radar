@@ -781,3 +781,19 @@ programs:
       careers, which suits a freshman interested in economics and CS. The 2026-27 dates aren't posted yet,
       so check the page.
     last_verified: 2026-11-24 found by weekly discovery (Claude web search) - check before relying on it
+
+  # Added 2026-11-24 from suggestion #11 (discovery)
+  - id: uber-uber-career-prep
+    firm: Uber
+    program: Uber Career Prep
+    type: pipeline program
+    fields: [cs]
+    class_years: [freshman, sophomore]
+    url: https://www.uber.com/us/en/careers/careerprep/
+    location: Virtual
+    travel_covered: none
+    status_hint: active
+    notes: A free, unpaid virtual software-engineering fellowship for undergraduates (cohorts of about 50)
+      with workshops and mock interviews led by Uber engineers. It's a good early CS step for a freshman,
+      but the 2027 cohort dates aren't posted.
+    last_verified: 2026-11-24 found by weekly discovery (Claude web search) - check before relying on it
