@@ -180,8 +180,11 @@ def payload_for(s: dict, today: date) -> dict | None:
     deadlines = [{"kind": d["kind"], "date": d["date"], "label": d["label"] or d["kind"]}
                  for d in s.get("deadlines") or [] if re.fullmatch(r"20\d\d-\d\d-\d\d", d.get("date") or "")]
     common = {"fields": s["fields"], "class_years": s["class_years"], "url": s["url"]}
+    # "Uber" + "Uber Career Prep" -> id "uber-career-prep", not "uber-uber-career-prep"
+    org, name = s["organization"], s["name"]
+    full_name = name if not org or name.lower().startswith(org.lower()) else f"{org} {name}"
     if kind == "early_program":
-        entry = {"id": slug(f"{s['organization']} {s['name']}"), "firm": s["organization"], "program": s["name"],
+        entry = {"id": slug(full_name), "firm": org or name, "program": name,
                  "type": "pipeline program" if s["type"] == "pipeline program" else "early-career program", **common,
                  "location": s["location"], "typical_open_month": s["typical_open_month"] or None,
                  "travel_covered": None if s["travel_covered"] == "unknown" else s["travel_covered"],

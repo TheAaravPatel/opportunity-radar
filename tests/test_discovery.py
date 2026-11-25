@@ -163,6 +163,7 @@ def test_payload_shapes():
                                   fields=["biotech"]), TODAY)
     assert company["ats"] == "greenhouse" and company["slug"] == "helixbio" and company["group"] == "biotech"
     assert payload_for(finding(kind="company", ats="none"), TODAY) is None
+    assert payload_for(finding(name="Uber Career Prep", organization="Uber"), TODAY)["id"] == "uber-career-prep"
     assert url_key("https://www.Example.com/a/b/?x=1") == "example.com/a/b"
 
 

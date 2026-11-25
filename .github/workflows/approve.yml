@@ -34,7 +34,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # The default branch as it is NOW (not when the issue was opened), so a
+      # second approval queued behind the first sees the first one's commit.
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
@@ -57,10 +61,12 @@ jobs:
             git -c user.name="opportunity-radar-bot" \
                 -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
                 commit --quiet -m "Add approved suggestion (issue #${ISSUE_NUMBER})" -m "Approved from the dashboard's Suggested tab; see the issue for details."
-            git push --quiet
+            git pull --quiet --rebase origin "$DEFAULT_BRANCH"   # in case the branch moved meanwhile
+            git push --quiet origin "HEAD:$DEFAULT_BRANCH"
           fi
         env:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       - name: Build dashboard
         run: python -m radar dashboard
       - name: Save database to the data branch
