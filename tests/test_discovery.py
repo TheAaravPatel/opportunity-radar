@@ -126,6 +126,25 @@ def test_discovery_is_off_without_a_key(conn, monkeypatch):
     assert Discovery(conn, load_config()).run(today=TODAY) == {"not_run": "the ANTHROPIC_API_KEY secret is not set"}
 
 
+def test_a_rejected_key_is_explained_not_crashed(conn, monkeypatch):
+    import anthropic
+    import httpx
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "  sk-ant-api03-abc\n")
+    discovery = Discovery(conn, load_config())
+    request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+
+    def fail(**kwargs):
+        raise anthropic.AuthenticationError("Invalid bearer token", response=httpx.Response(401, request=request), body=None)
+
+    discovery._client = SimpleNamespace(beta=SimpleNamespace(messages=SimpleNamespace(stream=fail, create=fail)))
+    summary = discovery.run(today=TODAY)
+    assert "rejected the API key (401)" in summary["error"]
+    assert "regular API key" in summary["error"] and "spaces/newlines" in summary["error"]
+    assert "abc" not in summary["error"]                                    # never the key itself
+    assert "error" in json.loads(conn.execute("SELECT value FROM meta WHERE key='last_discovery'").fetchone()[0])
+
+
 def test_payload_shapes():
     feed = payload_for(finding(kind="rss_feed", name="Econ Jobs Blog", url="https://blog.example.org",
                                feed_url="https://blog.example.org/feed/"), TODAY)

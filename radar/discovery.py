@@ -22,13 +22,12 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import re
 from datetime import date
 from urllib.parse import urlsplit
 
 from radar.db import get_meta, set_meta
-from radar.llm import FALLBACK_BETA
+from radar.llm import FALLBACK_BETA, api_key_from_env, describe_key
 from radar.normalize import normalize_org
 from radar.timeutil import now_iso, today_local
 
@@ -219,7 +218,7 @@ class Discovery:
     def client(self):
         if self._client is None:
             import anthropic
-            self._client = anthropic.Anthropic()
+            self._client = anthropic.Anthropic(api_key=api_key_from_env())
         return self._client
 
     def _extra(self) -> dict:
@@ -278,7 +277,7 @@ class Discovery:
         reason = None
         if not self.cfg.get("discovery.enabled", False):
             reason = "discovery.enabled is false in settings.yaml"
-        elif not os.environ.get("ANTHROPIC_API_KEY"):
+        elif not api_key_from_env():
             reason = "the ANTHROPIC_API_KEY secret is not set"
         if reason:
             if not dry_run:   # so the Suggested tab can say why nothing was found
@@ -289,8 +288,17 @@ class Discovery:
         urls, names, by_focus = known_items(self.cfg)
         for row in self.conn.execute("SELECT name, url FROM suggestions"):   # every status: never re-suggest a rejected one
             urls.add(url_key(row["url"] or ""))
-        write_up, searches = self.research(focus, focus_text, by_focus[focus], today)
-        found = self.extract(write_up) if write_up else []
+        import anthropic
+
+        try:
+            write_up, searches = self.research(focus, focus_text, by_focus[focus], today)
+            found = self.extract(write_up) if write_up else []
+        except anthropic.AuthenticationError:
+            return self._failed(f"Anthropic rejected the API key (401): {describe_key()}", dry_run)
+        except anthropic.APIStatusError as exc:
+            return self._failed(f"Anthropic API error {exc.status_code}: {exc.message}"[:300], dry_run)
+        except anthropic.APIConnectionError as exc:
+            return self._failed(f"could not reach the Anthropic API: {exc}"[:300], dry_run)
 
         added, skipped = [], []
         for s in found:
@@ -314,6 +322,14 @@ class Discovery:
             set_meta(self.conn, "last_discovery", json.dumps(summary))
             self.conn.commit()
         return summary
+
+    def _failed(self, error: str, dry_run: bool) -> dict:
+        """Remember the error so the Suggested tab can show it, and report it."""
+        log.error("discovery failed: %s", error)
+        if not dry_run:
+            set_meta(self.conn, "last_discovery", json.dumps({"at": now_iso(), "error": error}))
+            self.conn.commit()
+        return {"error": error}
 
     @staticmethod
     def _reject_reason(s: dict, urls: set[str], names: set[str]) -> str | None:

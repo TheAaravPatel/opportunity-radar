@@ -585,7 +585,9 @@ function suggestedView() {
     el("p", {}, "Programs, pages and sources the radar found but doesn't track yet: from the ",
       el("b", { text: "weekly discovery" }), " web search and from early-career postings in the feeds. ",
       "Approve adds one to the config (via a GitHub issue that the approve workflow handles); Reject hides it for good."),
-    last ? el("p", { class: "result-count", text: last.not_run
+    last ? el("p", { class: last.error ? "err" : "result-count", text: last.error
+      ? `Weekly discovery failed ${ago(last.at)}: ${last.error}.`
+      : last.not_run
       ? `Weekly discovery didn't run ${ago(last.at)}: ${last.not_run}.`
       : `Last discovery ${ago(last.at)}: ${last.searches} web searches about ${last.focus.replace("_", " ")}s, ${last.added.length} new.` })
       : el("p", { class: "result-count", text: "Weekly discovery hasn't run yet (it needs the ANTHROPIC_API_KEY secret)." }));

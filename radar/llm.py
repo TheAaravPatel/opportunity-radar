@@ -24,6 +24,30 @@ from radar.timeutil import now_iso, to_date_str
 
 log = logging.getLogger(__name__)
 
+def api_key_from_env() -> str | None:
+    """ANTHROPIC_API_KEY without stray spaces/newlines (easy to paste into a GitHub Secret)."""
+    key = (os.environ.get("ANTHROPIC_API_KEY") or "").strip()
+    return key or None
+
+
+def describe_key() -> str:
+    """What kind of key the secret holds - without revealing it - to explain a 401."""
+    raw = os.environ.get("ANTHROPIC_API_KEY") or ""
+    key = raw.strip()
+    if not key:
+        return "the ANTHROPIC_API_KEY secret is empty"
+    if key.startswith("sk-ant-admin"):
+        kind = "an Admin API key, which can't send messages - create a regular API key instead"
+    elif key.startswith("sk-ant-oat"):
+        kind = "a Claude subscription (OAuth) token, not an API key - create an API key at console.anthropic.com"
+    elif key.startswith("sk-ant-api"):
+        kind = "a regular API key, so it was probably revoked, mistyped or cut off when pasted"
+    else:
+        kind = "not something that looks like an Anthropic API key (they start with sk-ant-api)"
+    spaces = " (spaces/newlines around it were ignored)" if raw != key else ""
+    return f"the ANTHROPIC_API_KEY secret is {kind}{spaces}; it is {len(key)} characters long"
+
+
 PROMPT_VERSION = "deadlines-v1"   # bump when the prompt changes, so old cached answers aren't reused
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
@@ -70,7 +94,7 @@ class Claude:
         self.model = cfg.get("llm.model", "claude-opus-5-5")
         self.refusal_fallback = bool(cfg.get("llm.refusal_fallback", True))
         self.max_extract_calls = int(cfg.get("llm.max_extract_calls_per_run", 5))
-        self.enabled = bool(cfg.get("llm.enabled", True)) and bool(os.environ.get("ANTHROPIC_API_KEY"))
+        self.enabled = bool(cfg.get("llm.enabled", True)) and bool(api_key_from_env())
         self.extract_calls = 0
         self._client = None
 
@@ -94,7 +118,7 @@ class Claude:
         import anthropic   # imported here so the radar runs without the package configured
 
         if self._client is None:
-            self._client = anthropic.Anthropic()
+            self._client = anthropic.Anthropic(api_key=api_key_from_env())
         request = dict(
             model=self.model,
             max_tokens=16000,
@@ -107,6 +131,10 @@ class Claude:
                 response = self._client.beta.messages.create(betas=[FALLBACK_BETA], fallbacks="default", **request)
             else:
                 response = self._client.messages.create(**request)
+        except anthropic.AuthenticationError:
+            log.warning("Claude request failed: Anthropic rejected the key (401) - %s", describe_key())
+            self.enabled = False      # no point trying again this run
+            return None
         except anthropic.APIStatusError as exc:
             log.warning("Claude request failed: HTTP %s %s", exc.status_code, exc.message)
             return None

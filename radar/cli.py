@@ -115,6 +115,8 @@ def main(argv: list[str] | None = None) -> int:
 
         summary = Discovery(db.connect(args.db), cfg).run(dry_run=args.dry_run)
         print(json.dumps(summary, indent=2))
+        # A failed run still exits 0 so the workflow saves the database and the
+        # dashboard shows the error; the summary above says what went wrong.
         return 0
 
     if args.command in ("approve", "reject", "decide"):
