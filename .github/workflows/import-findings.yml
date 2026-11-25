@@ -1,8 +1,12 @@
 # Receives the weekly discovery finds from the scheduled Claude Code task
 # (docs/discovery-task.md) and puts them on the dashboard's Suggested tab.
+# Two ways in:
+#   * "Run workflow" (workflow_dispatch) with the JSON as an input
+#   * a push to a claude/... branch that adds discovery/inbox/<date>.json
+#     (for sessions without GitHub API tools - git push is enough)
 #
-# Only people with write access can start a workflow (that's you, or a Claude
-# Code session acting for you). The finds are still treated as untrusted
+# Only people with write access can start a workflow or push a branch (that's
+# you, or a Claude Code session acting for you). The finds are still treated as untrusted
 # data: `import-findings` keeps only known fields and runs the same checks
 # as discovery (https, allowed sites, not already tracked or ever suggested).
 # Nothing reaches the config until you approve it.
@@ -23,6 +27,9 @@ on:
         description: "How many web searches were used"
         type: number
         default: 0
+  push:
+    branches: ["claude/**"]
+    paths: ["discovery/inbox/*.json"]
 
 permissions:
   contents: write                # save the database to the data branch
@@ -55,19 +62,29 @@ jobs:
           SEARCHES: ${{ inputs.searches }}
         run: |
           mkdir -p out
-          printf '%s' "$FINDINGS" > out/findings.json
-          python -m radar import-findings out/findings.json --focus "$FOCUS" --searches "${SEARCHES:-0}"
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            # The file(s) the session pushed; focus + searches are inside the JSON.
+            for f in discovery/inbox/*.json; do python -m radar import-findings "$f"; done
+          else
+            printf '%s' "$FINDINGS" > out/findings.json
+            python -m radar import-findings out/findings.json --focus "$FOCUS" --searches "${SEARCHES:-0}"
+          fi
       - name: Build dashboard
         run: python -m radar dashboard
       - name: Save database to the data branch
         run: bash scripts/save-db.sh
-      - uses: actions/configure-pages@v6
-      - uses: actions/upload-pages-artifact@v5
+      # Pages only deploys from the default branch, so a push from a session
+      # branch skips this; the next scheduled run republishes the dashboard.
+      - if: github.event_name == 'workflow_dispatch'
+        uses: actions/configure-pages@v6
+      - if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
   deploy:
     needs: import
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

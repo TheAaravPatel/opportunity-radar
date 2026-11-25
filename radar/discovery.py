@@ -271,8 +271,12 @@ def brief(cfg, today: date | None = None) -> str:
         "", "A JSON object `{\"suggestions\": [...]}`; each item has exactly these keys "
             "(use \"\", [], 0 or \"unknown\" when you don't know; dates are YYYY-MM-DD):",
         "", "```json", json.dumps(EXTRACT_SCHEMA["properties"]["suggestions"]["items"], indent=1), "```",
-        "", f'Send it by running the GitHub Actions workflow `import-findings.yml` with inputs '
-            f'`findings` = that JSON (one line), `focus` = `{focus}`, `searches` = how many searches you used.',
+        "", "## Sending it (pick one)",
+        "", f"1. With GitHub tools: run the Actions workflow `import-findings.yml` on the default branch with "
+            f"inputs `findings` = that JSON (one line), `focus` = `{focus}`, `searches` = how many searches you used.",
+        f"2. With git only: save `{{\"focus\": \"{focus}\", \"searches\": N, \"suggestions\": [...]}}` as "
+        f"`discovery/inbox/{today.isoformat()}.json`, commit it and push your session branch (claude/...). "
+        "The push starts the same workflow; change nothing else.",
     ])
 
 

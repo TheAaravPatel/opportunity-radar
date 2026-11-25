@@ -296,6 +296,17 @@ def test_imported_findings_are_cleaned_and_checked(conn, tmp_path):
     assert last["via"] == "Claude Code task" and last["searches"] == 11 and len(last["skipped"]) == 1
 
 
+def test_pushed_inbox_file_carries_focus_and_searches(tmp_path):
+    from radar import db
+    from radar.cli import main
+
+    path = tmp_path / "2026-11-29.json"
+    path.write_text(json.dumps({"focus": "conference", "searches": 9, "suggestions": [finding(kind="conference")]}))
+    assert main(["--db", str(tmp_path / "radar.db"), "import-findings", str(path)]) == 0
+    last = json.loads(db.connect(tmp_path / "radar.db").execute("SELECT value FROM meta WHERE key='last_discovery'").fetchone()[0])
+    assert (last["focus"], last["searches"], len(last["added"])) == ("conference", 9, 1)
+
+
 def test_bad_json_is_refused(tmp_path):
     from radar.cli import main
 

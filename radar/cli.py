@@ -143,8 +143,11 @@ def main(argv: list[str] | None = None) -> int:
             print(f"findings are not valid JSON: {exc}")
             return 1
         found = clean_findings(data, int(cfg.get("discovery.max_suggestions", 8)))
+        # A pushed inbox file carries its own focus + search count.
+        focus = args.focus or (data.get("focus") if isinstance(data, dict) else "") or "unknown"
+        searches = args.searches or (data.get("searches") if isinstance(data, dict) and isinstance(data.get("searches"), int) else 0)
         summary = Discovery(db.connect(args.db), cfg).store_findings(
-            found, args.focus or "unknown", args.searches, via="Claude Code task")
+            found, str(focus)[:40], searches, via="Claude Code task")
         print(json.dumps(summary, indent=2))
         return 0
 
