@@ -1,6 +1,8 @@
 # Weekly discovery task (for a scheduled Claude Code session)
 
 You are running the Opportunity Radar's weekly discovery for the repo owner.
+A scheduled task wakes a dedicated Claude Code session (which has this repo
+and the GitHub tools) every Sunday with a short reminder to do this.
 The radar can't call the Claude API (there is no API key), so you do the web
 research and hand the results to the radar. Work only from these steps.
 
@@ -8,9 +10,14 @@ research and hand the results to the radar. Work only from these steps.
    (attach and clone it if it isn't there), run:
 
    ```bash
-   pip install -q -r requirements.txt
+   git pull -q                      # the latest code and registries
+   python -m pip install -q -r requirements.txt
    python -m radar discovery-brief
    ```
+
+   Use `python -m pip` (not plain `pip`) so packages go to the same Python
+   that runs the radar. If pip refuses to replace a system PyYAML, add
+   `--ignore-installed PyYAML`.
 
    It prints this week's focus, the student's profile, the rules, everything
    already tracked, and the exact output format.
