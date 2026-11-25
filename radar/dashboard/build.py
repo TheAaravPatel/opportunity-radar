@@ -22,6 +22,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from radar import store
+from radar.db import get_meta
 from radar.sources.registries import feed_sightings
 from radar.config import Config
 from radar.eligibility import class_for_grad_year
@@ -136,6 +137,8 @@ def collect_data(conn: sqlite3.Connection, cfg: Config) -> dict:
         "manual_links": cfg.get("dashboard.manual_check_links", []) or [],
         "page_changes": collect_page_changes(conn),
         "watched_pages": collect_watched_pages(conn),
+        "repo": cfg.get("dashboard.repo", ""),
+        "last_discovery": _loads(get_meta(conn, "last_discovery"), None),
         "suggestions": [{**dict(s), "payload": _loads(s["payload"], None)} for s in conn.execute(
             "SELECT id, kind, name, url, why, target_config, found_at, source, payload FROM suggestions WHERE status = 'pending' ORDER BY found_at DESC"
         )],

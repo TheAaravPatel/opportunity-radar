@@ -23,6 +23,8 @@ what format it uses, and its caveats.
 |---|---|---|
 | **Job feeds** (`jobs.yml`) | every 6 hours | reads the job/internship feeds, rebuilds the dashboard |
 | **Daily pages + digest** (`daily.yml`) | ~6:47 am Pacific | registries + watched pages, dashboard, email digest |
+| **Weekly discovery** (`discovery.yml`) | Sundays ~9:23 am Pacific | Claude searches the web (max 15 searches) for programs, pages, conferences and sources we don't track yet → Suggested tab |
+| **Approve or reject a suggestion** (`approve.yml`) | when you open an "Approve/Reject suggestion #N" issue | adds the approved entry to the config (or hides a rejected one), replies, closes the issue |
 | **Verify sources** (`verify.yml`) | when you click "Run workflow" | checks every source + URL once and writes a report |
 | **Tests** (`ci.yml`) | every push | runs `pytest` |
 
@@ -44,7 +46,7 @@ workflow artifacts.
    | `DIGEST_TO` | where to send it (optional; defaults to `GMAIL_ADDRESS`) | email digest |
    | `USAJOBS_API_KEY` | free key from <https://developer.usajobs.gov/apirequest/> | federal student (Pathways) econ/statistics roles; until both are set the source shows "needs secret" |
    | `USAJOBS_EMAIL` | the email you registered the USAJobs key with (USAJobs requires it as the User-Agent) | USAJobs |
-   | `ANTHROPIC_API_KEY` | from <https://console.anthropic.com/> | optional: Claude reads deadlines on pages the date rules can't (max 5 small requests a day, cached), and weekly discovery later |
+   | `ANTHROPIC_API_KEY` | from <https://console.anthropic.com/> | optional: weekly discovery (about 15 web searches + 2 Claude requests a week) and Claude reading deadlines on pages the date rules can't (max 5 small requests a day, cached) |
 
    Anything missing just turns that feature off. Nothing else breaks.
 3. **Run it once**: **Actions → Job feeds (every 6 hours) → Run workflow**, then
@@ -234,6 +236,23 @@ Many job feeds (like SimplifyJobs) don't include descriptions, so far-away jobs 
 "far away - housing not covered?" and are hidden by default. Choose **Where → Anywhere** to see
 everything. Set `allow_partial: true` to also include partly funded ones, or `allow_remote: false`
 to hide remote roles.
+
+### Review suggestions (weekly discovery)
+Every Sunday, Claude searches the web for things the radar doesn't track yet, one area per week
+in turn: early-career programs, Stanford research programs, conferences/travel scholarships, and
+new data sources. Early-career postings in the feeds that look like unknown programs are added
+too. They appear on the dashboard's **Suggested sources** tab, each with the exact config entry
+approving would add.
+
+- **Approve** opens a GitHub issue titled "Approve suggestion #N" - just submit it. The approve
+  workflow adds the entry to the right config file (comments kept), commits it, replies on the
+  issue and closes it. The next scheduled run starts tracking it.
+- **Reject** works the same way and hides the suggestion for good.
+- Only issues **you** open do anything (the repo is public, so anyone can open issues), and what
+  gets added always comes from the database, never from the issue text.
+- On your computer: `python -m radar approve 12` / `python -m radar reject 12`.
+- Turn discovery off with `discovery.enabled: false` in `settings.yaml`; `max_searches` and
+  `max_suggestions` set how much it does per week.
 
 ### Change what the email or scores do
 - `config/settings.yaml` → `digest:` controls the deadline window, the reminder days (14/7/2)

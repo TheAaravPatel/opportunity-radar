@@ -1,0 +1,55 @@
+# Once a week: Claude searches the web for programs, pages, conferences and
+# sources we don't track yet. Finds go to the dashboard's Suggested tab; you
+# approve or reject each one (see approve.yml). Needs the ANTHROPIC_API_KEY
+# secret; without it the step just says "skipped". At most 15 web searches.
+name: Weekly discovery
+
+on:
+  schedule:
+    - cron: "23 17 * * 0"      # Sundays 17:23 UTC (9:23 am Pacific standard time)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write                # save the database to the data branch
+  pages: write                   # republish the dashboard
+  id-token: write
+
+concurrency:
+  group: radar-data
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Load database from the data branch
+        run: bash scripts/load-db.sh
+      - name: Search for new opportunities
+        run: python -m radar discover
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Build dashboard
+        run: python -m radar dashboard
+      - name: Save database to the data branch
+        run: bash scripts/save-db.sh
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    needs: discover
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

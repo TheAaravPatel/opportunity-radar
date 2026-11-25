@@ -95,8 +95,20 @@ class ProgramMatcher:
         return None
 
 
-def _slug(text: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", (text or "").lower()).strip("-")[:60]
+def _slug(text: str, limit: int = 60) -> str:
+    """'Bain & Company CREW Program' -> 'bain-company-crew-program' (cut at a whole word)."""
+    text = re.sub(r"[^a-z0-9]+", "-", (text or "").lower()).strip("-")
+    return (text[:limit + 1].rsplit("-", 1)[0] if len(text) > limit else text) or "suggestion"
+
+
+def program_name(org: str, title: str) -> str:
+    """'Bain & Company 2027 CREW Program - Apply by Nov 30, 2026' -> 'CREW Program'."""
+    name = title or ""
+    if org and name.lower().startswith(org.lower()):
+        name = name[len(org):]
+    name = re.sub(r"\s*[–—-]\s*apply by.*$", "", name, flags=re.I)
+    name = re.sub(r"\b20\d\d\b", " ", name)
+    return " ".join(name.split()).strip(" -–:") or title
 
 
 def link_early_postings(conn, cfg, today: date) -> dict:
@@ -123,13 +135,16 @@ def link_early_postings(conn, cfg, today: date) -> dict:
             links[program_id].append(row["id"])
         elif programish and programish.search(row["title"] or "") and row["url"]:
             suggestion_urls.add(row["url"])
-            draft = {"id": _slug(f"{row['organization']} {row['title']}"), "firm": row["organization"],
-                     "program": row["title"], "url": row["url"],
+            name = program_name(row["organization"], row["title"])
+            draft = {"id": _slug(f"{row['organization']} {name}"), "firm": row["organization"],
+                     "program": name, "url": row["url"],
                      "fields": [f for f in (row["fields"] or "").split(",") if f], "class_years": class_years,
                      "notes": f"Found by keyword detection in {row['primary_source']} on {today.isoformat()}"}
             conn.execute(
-                """INSERT OR IGNORE INTO suggestions (kind, name, url, why, target_config, payload, source, found_at, status)
-                   VALUES ('early_program', ?, ?, ?, 'config/early_programs.yaml', ?, 'keyword-detection', ?, 'pending')""",
+                """INSERT INTO suggestions (kind, name, url, why, target_config, payload, source, found_at, status)
+                   VALUES ('early_program', ?, ?, ?, 'config/early_programs.yaml', ?, 'keyword-detection', ?, 'pending')
+                   ON CONFLICT(kind, url) DO UPDATE SET name = excluded.name, why = excluded.why, payload = excluded.payload
+                   WHERE suggestions.status = 'pending'""",
                 (f"{row['organization']}: {row['title']}", row["url"],
                  f"Looks like an early-career program (seen in {row['primary_source']}) but isn't in the registry yet.",
                  json.dumps(draft), now),

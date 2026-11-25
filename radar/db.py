@@ -28,7 +28,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 # Columns added after the first version. CREATE TABLE IF NOT EXISTS doesn't
 # change a table that already exists (the database on the data branch), so
@@ -40,6 +40,8 @@ ADDED_COLUMNS = {
               "fetch_method": "TEXT", "text_chars": "INTEGER",
               # v4 (Phase 5): clues for the early-program registry
               "signal": "TEXT", "signal_line": "TEXT", "years_seen": "TEXT", "gone_since": "TEXT"},
+    # v5 (Phase 7): when a suggestion was approved / rejected
+    "suggestions": {"decided_at": "TEXT"},
 }
 
 SCHEMA = """

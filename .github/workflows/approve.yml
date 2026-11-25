@@ -1,0 +1,92 @@
+# Approve or reject a suggestion from your phone.
+#
+# The dashboard's Suggested tab has Approve / Reject buttons. Each opens a new
+# issue titled "Approve suggestion #42" (or "Reject ..."). This workflow then:
+#   1. checks the issue was opened by the repo OWNER - the repo is public, so
+#      anyone can open issues, and theirs are ignored
+#   2. takes only the action + number from the title; what gets added comes
+#      from the database, never from the issue text
+#   3. adds the entry to the right config file and commits it (approve), or
+#      marks the suggestion rejected so it never comes back
+#   4. replies on the issue and closes it, and republishes the dashboard
+name: Approve or reject a suggestion
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write                # commit the config change + save the database
+  issues: write                  # reply and close
+  pages: write
+  id-token: write
+
+concurrency:
+  group: radar-data
+  cancel-in-progress: false
+
+jobs:
+  decide:
+    if: >-
+      github.event.issue.user.login == github.repository_owner &&
+      (startsWith(github.event.issue.title, 'Approve suggestion') ||
+       startsWith(github.event.issue.title, 'Reject suggestion'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Load database from the data branch
+        run: bash scripts/load-db.sh
+      - name: Apply the decision
+        # The title goes through an environment variable, never pasted into
+        # the script, so an odd title can't run as shell code.
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: python -m radar decide "$ISSUE_TITLE" --message-file out/decision.md
+      - name: Commit the config change
+        run: |
+          git add config
+          if git diff --cached --quiet; then
+            echo "No config change (a rejection, or nothing to add)."
+          else
+            git -c user.name="opportunity-radar-bot" \
+                -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+                commit --quiet -m "Add approved suggestion (issue #${ISSUE_NUMBER})" -m "Approved from the dashboard's Suggested tab; see the issue for details."
+            git push --quiet
+          fi
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+      - name: Build dashboard
+        run: python -m radar dashboard
+      - name: Save database to the data branch
+        run: bash scripts/save-db.sh
+      - name: Reply on the issue and close it
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          mkdir -p out
+          [ -f out/decision.md ] || echo "Something went wrong - see the workflow log." > out/decision.md
+          printf '\n\n_Done by the approve workflow._\n' >> out/decision.md
+          gh issue comment "$ISSUE_NUMBER" --body-file out/decision.md
+          gh issue close "$ISSUE_NUMBER"
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    needs: decide
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

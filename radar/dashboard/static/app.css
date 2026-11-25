@@ -215,3 +215,11 @@ pre.diff .del { color: var(--bad); }
 
 .footer { color: var(--muted); font-size: 0.8rem; padding: 16px; text-align: center; border-top: 1px solid var(--border); }
 .footer a { color: var(--muted); }
+
+/* Suggested tab: Approve / Reject buttons (they open a GitHub issue). */
+.decide { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.button { display: inline-block; padding: 7px 14px; border-radius: 8px; font-weight: 600; text-decoration: none;
+          border: 1px solid var(--border); background: var(--surface-2); color: var(--text); }
+.button.approve { background: var(--ok-soft); color: var(--ok); border-color: var(--ok); }
+.button.reject { background: var(--surface); color: var(--muted); }
+.button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }

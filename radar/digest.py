@@ -59,6 +59,7 @@ class Digest:
     early_unreported: list[dict] = field(default_factory=list)   # opening/closing items not emailed yet
     new_early_postings: list[dict] = field(default_factory=list)
     early_now_open: list[dict] = field(default_factory=list)   # registry programs that became open since the last digest
+    new_suggestions: list[dict] = field(default_factory=list)  # Suggested tab additions since the last digest
     new_by_field: dict[str, list[dict]] = field(default_factory=dict)
     new_counts: dict[str, int] = field(default_factory=dict)
     new_conferences: list[dict] = field(default_factory=list)
@@ -78,7 +79,7 @@ class Digest:
     def should_send(self) -> bool:
         return bool(
             self.new_total or self.reminders or self.early_unreported or self.early_warnings or self.early_now_open
-            or self.page_changes or self.newly_failed or self.first_digest
+            or self.page_changes or self.new_suggestions or self.newly_failed or self.first_digest
         )
 
     def subject(self) -> str:
@@ -257,6 +258,14 @@ def build_digest(conn: sqlite3.Connection, cfg: Config) -> Digest:
                        ORDER BY s.id DESC LIMIT 1) AS diff
                FROM pages p
                WHERE p.last_changed_at > ? ORDER BY p.kind DESC, p.last_changed_at DESC""",
+            (since,),
+        )
+    ]
+
+    # New suggestions (weekly discovery, keyword detection) waiting for a decision.
+    digest.new_suggestions = [
+        dict(r) for r in conn.execute(
+            "SELECT id, kind, name, url, why, source FROM suggestions WHERE status = 'pending' AND found_at > ? ORDER BY id",
             (since,),
         )
     ]

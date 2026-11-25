@@ -8,6 +8,10 @@ Commands
   digest     build the daily email and send it (or --dry-run to write out/digest.html)
   verify     fetch every source + load every registry URL once, print a report;
              writes nothing to the database (used by the "Verify sources" workflow)
+  discover   weekly: Claude searches the web for new opportunities -> Suggested tab
+             (--dry-run: print what it found, store nothing)
+  approve ID / reject ID     decide on a suggestion (approve adds it to the config)
+  decide "Approve suggestion #42"   the same, from a GitHub issue title (approve workflow)
 
 Global options: --db PATH (default data/radar.db), --config DIR, -v for debug logs.
 """
@@ -50,6 +54,15 @@ def main(argv: list[str] | None = None) -> int:
 
     p_probe = sub.add_parser("probe", help="print the structure of public pages/feeds (debugging aid)")
     p_probe.add_argument("urls", nargs="+")
+
+    p_discover = sub.add_parser("discover", help="weekly web search for new opportunities (needs ANTHROPIC_API_KEY)")
+    p_discover.add_argument("--dry-run", action="store_true")
+    for name in ("approve", "reject"):
+        p = sub.add_parser(name, help=f"{name} a suggestion by its number")
+        p.add_argument("id", type=int)
+    p_decide = sub.add_parser("decide", help="approve/reject from an issue title like 'Approve suggestion #42'")
+    p_decide.add_argument("title")
+    p_decide.add_argument("--message-file", default=None, help="also write the reply here (for the workflow)")
 
     args = parser.parse_args(argv)
     logging.basicConfig(
@@ -94,6 +107,30 @@ def main(argv: list[str] | None = None) -> int:
         from radar.probe import probe
 
         return probe(args.urls, Http.from_config(cfg))
+
+    if args.command == "discover":
+        import json
+
+        from radar.discovery import Discovery
+
+        summary = Discovery(db.connect(args.db), cfg).run(dry_run=args.dry_run)
+        print(json.dumps(summary, indent=2))
+        return 0
+
+    if args.command in ("approve", "reject", "decide"):
+        from radar.approve import DecisionError, decide, parse_title
+
+        conn = db.connect(args.db)
+        try:
+            action, number = parse_title(args.title) if args.command == "decide" else (args.command, args.id)
+            message, code = decide(conn, action, number), 0
+        except DecisionError as exc:
+            message, code = f"Nothing changed: {exc}", 1
+        print(message)
+        if getattr(args, "message_file", None):
+            Path(args.message_file).parent.mkdir(parents=True, exist_ok=True)
+            Path(args.message_file).write_text(message + "\n", encoding="utf-8")
+        return code
 
     parser.print_help()
     return 1

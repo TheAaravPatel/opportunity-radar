@@ -80,6 +80,12 @@
     {% endfor %}
   {% else %}<p style="{{ muted }}">No watched page changed.</p>{% endif %}
 
+  {% if d.new_suggestions %}
+  <h2 style="font-size:17px;margin:18px 0 6px;">New suggestions to review</h2>
+    {% for x in d.new_suggestions %}<p style="margin:4px 0;">💡 <a href="{{ x.url }}" style="color:#0b5cad;">{{ x.name }}</a> <span style="{{ muted }}">- {{ x.why }}</span></p>{% endfor %}
+    <p style="{{ muted }}">Approve or reject them on the dashboard's Suggested tab.</p>
+  {% endif %}
+
   {# 6. Sources #}
   <h2 style="font-size:17px;margin:18px 0 6px;">Sources that failed</h2>
   {% if d.failed_sources %}

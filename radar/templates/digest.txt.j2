@@ -64,6 +64,13 @@ None new.
 No watched page changed.
 {% endfor %}
 
+{% if d.new_suggestions %}
+== New suggestions to review (dashboard: Suggested tab) ==
+{% for x in d.new_suggestions %}
+* {{ x.name }}  {{ x.url }}
+{% endfor %}
+
+{% endif %}
 == Sources that failed ==
 {% for s in d.failed_sources %}
 * {{ s.name or s.id }}: {{ s.last_error }}

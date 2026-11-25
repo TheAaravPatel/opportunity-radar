@@ -51,12 +51,15 @@ radar/
   watcher/         page-watcher: fetch.py (robots.txt, http, Playwright fallback), text.py,
                    snapshot.py (pages/page_snapshots + diffs), deadlines.py (regex + dateparser)
   llm.py           Claude wrapper: llm_cache, per-run caps, JSON-schema output, refusal fallback
+  discovery.py     weekly Claude web search -> suggestions (research call, then structured extraction)
+  approve.py       approve/reject suggestions: insert the draft entry into the right YAML block
   verify.py        live check of every source + registry URL (no DB writes)
   probe.py         outline any public URL's HTML/JSON/feed (Verify workflow `probe_urls` input)
 tests/             pytest; fixtures are real samples captured from sources
 docs/SOURCES.md    source verification report (what exists, formats, caveats)
 scripts/           load-db.sh / save-db.sh (database ↔ `data` branch)
-.github/workflows/ jobs.yml (6-hourly), daily.yml (pages + digest), verify.yml, ci.yml
+.github/workflows/ jobs.yml (6-hourly), daily.yml (pages + digest), discovery.yml (weekly),
+                   approve.yml (issue -> decision), verify.yml, ci.yml
 ```
 
 ## Commands
@@ -132,11 +135,25 @@ Use `RADAR_NOW=2027-01-05T15:00:00Z` to pretend it's another date (tests do this
   A firm's only program is NOT matched by default (Bain's CREW posting isn't BEL).
   `early_career_only` boards keep only early titles or registry matches. Oracle fetcher
   in `ats_oracle.py` (JPMC site CX_1; Goldman's Oracle site has no campus jobs -> disabled).
+- **Discovery + approvals** (Phase 7): `discover` rotates one focus area per ISO week
+  (early_program / stanford_page / conference / source). Request 1 streams Claude with
+  `web_search_20260209` (`max_uses` = `discovery.max_searches`, LinkedIn/Indeed/Handshake blocked);
+  a `pause_turn` is resumed with the SAME tools (editing tools would invalidate Opus 5.5's thinking)
+  and never once the search budget is used. Request 2 (no tools, low effort) extracts JSON with a
+  schema - separate because web-search citations can't combine with structured output. Finds are
+  deduped against every registry/source URL + name and every past suggestion (rejected never
+  return), and stored with a draft `payload` + `target_config`. Approve/Reject buttons open a
+  GitHub issue; `approve.yml` acts only on issues by the repo owner, takes just the action + id
+  from the title, reads the payload from the DB, validates it like test_config, inserts it as text
+  at the end of the right top-level block (comments kept; ids made unique), commits, replies and
+  closes. `python -m radar approve|reject ID` does the same locally.
 - **Schema changes**: add new columns to `ADDED_COLUMNS` in db.py so the database already on
   the data branch is upgraded in place.
-- **Claude API** (later phases): model from `settings.yaml` (`claude-opus-5-5`), only for
-  items keyword rules can't place, cached in `llm_cache`, hard per-run caps, everything
-  no-ops without `ANTHROPIC_API_KEY`.
+- **Claude API**: model from `settings.yaml` (`claude-opus-5-5`), effort set explicitly (low for
+  extraction, medium for discovery research), `fallbacks: "default"` (beta
+  `server-side-fallback-2026-07-01`) when `llm.refusal_fallback`, `stop_reason` checked before
+  reading content, page-deadline answers cached in `llm_cache`, hard caps, and everything no-ops
+  without `ANTHROPIC_API_KEY`.
 
 ## Adding things
 - **A source**: write `radar/sources/<name>.py` with `@register("<type>")` + `fetch() ->
@@ -164,4 +181,4 @@ Use `RADAR_NOW=2027-01-05T15:00:00Z` to pretend it's another date (tests do this
 5. ✅ Early programs: page-watching of 42 program pages (open/closed wording, gone pages), posting ->
    program matching + suggestions, `early_career_companies` boards (Workday, Greenhouse, Ashby, Oracle)
 6. ✅ Conferences & hackathons (built before 3-5 at the owner's request): conferences.yaml (41), student-opportunities, BadgeUp; name+year dedupe with TBA matching and `aka` aliases
-7. ⏳ Weekly discovery (Claude + web search) + approval flow
+7. ✅ Weekly discovery (Claude + web search, rotating focus) + approve/reject from the Suggested tab via issues

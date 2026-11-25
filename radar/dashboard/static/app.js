@@ -565,20 +565,46 @@ function conferenceIntro() {
     "Hackathons have their own tab.");
 }
 
+// Approve / Reject open a GitHub issue; the approve workflow does the rest
+// (only for issues the repo owner opens).
+function decisionLink(action, s) {
+  if (!DATA.repo) return null;
+  const title = `${action} suggestion #${s.id}`;
+  const body = `${action === "Approve" ? "Add" : "Drop"}: ${s.name}\n${s.url}\n\n` +
+    "Submit this issue as is. The approve workflow reads suggestion #" + s.id + " from the database " +
+    "(not from this text), " + (action === "Approve" ? `adds it to ${s.target_config || "the config"}` : "marks it rejected") +
+    ", replies here and closes the issue.";
+  const url = `https://github.com/${DATA.repo}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+  return el("a", { class: `button ${action === "Approve" ? "approve" : "reject"}`, href: url, target: "_blank", rel: "noopener", text: action });
+}
+
 function suggestedView() {
   const list = DATA.suggestions || [];
-  if (!list.length) return el("div", { class: "empty", text: "No suggestions waiting. Early-career postings that look like programs but aren't in the registry show up here (and, later, the weekly discovery job's finds)." });
-  return el("div", { class: "cards" }, list.map((s) => el("article", { class: "card" },
+  const last = DATA.last_discovery;
+  const header = el("div", { class: "panel" },
+    el("p", {}, "Programs, pages and sources the radar found but doesn't track yet: from the ",
+      el("b", { text: "weekly discovery" }), " web search and from early-career postings in the feeds. ",
+      "Approve adds one to the config (via a GitHub issue that the approve workflow handles); Reject hides it for good."),
+    last ? el("p", { class: "result-count", text: last.not_run
+      ? `Weekly discovery didn't run ${ago(last.at)}: ${last.not_run}.`
+      : `Last discovery ${ago(last.at)}: ${last.searches} web searches about ${last.focus.replace("_", " ")}s, ${last.added.length} new.` })
+      : el("p", { class: "result-count", text: "Weekly discovery hasn't run yet (it needs the ANTHROPIC_API_KEY secret)." }));
+  if (!list.length) return el("div", {}, header, el("div", { class: "empty", text: "No suggestions waiting." }));
+  return el("div", {}, header, el("div", { class: "cards" }, list.map((s) => el("article", { class: "card" },
     el("h3", { class: "card-title" }, link(s.name, s.url)),
-    el("div", { class: "card-org", text: `${s.kind.replace("_", " ")} · found ${ago(s.found_at)} · would go in ${s.target_config || "config"}` }),
+    el("div", { class: "card-org", text: `${s.kind.replace("_", " ")} · ${s.source === "discovery" ? "weekly discovery" : "found in the feeds"} · ${ago(s.found_at)}` }),
     s.why ? el("p", { class: "card-reason", text: s.why }) : null,
-    s.payload ? el("details", { class: "why" }, el("summary", { text: "Draft entry to paste into the YAML" }),
-      el("pre", { class: "diff", text: yamlEntry(s.payload) })) : null)));
+    s.payload ? el("details", { class: "why" }, el("summary", { text: `What approving adds to ${s.target_config}` }),
+      el("pre", { class: "diff", text: yamlEntry(s.payload) })) : el("p", { class: "result-count", text: "Needs code to add - approving just marks it done." }),
+    el("div", { class: "decide" }, decisionLink("Approve", s), decisionLink("Reject", s))))));
 }
 
 // {id: "x", fields: ["econ"]} -> "  - id: x\n    fields: [econ]" (edit before pasting)
 function yamlEntry(obj) {
-  const value = (v) => Array.isArray(v) ? `[${v.join(", ")}]` : (/[:#]/.test(String(v)) ? JSON.stringify(String(v)) : String(v));
+  const scalar = (v) => (/[:#{}\[\],]/.test(String(v)) ? JSON.stringify(String(v)) : String(v));
+  const value = (v) => Array.isArray(v)
+    ? `[${v.map((x) => (x && typeof x === "object") ? `{${Object.entries(x).map(([k, y]) => `${k}: ${scalar(y)}`).join(", ")}}` : scalar(x)).join(", ")}]`
+    : scalar(v);
   return Object.entries(obj).filter(([, v]) => v !== null && v !== "" && !(Array.isArray(v) && !v.length))
     .map(([k, v], i) => `${i ? "    " : "  - "}${k}: ${value(v)}`).join("\n");
 }

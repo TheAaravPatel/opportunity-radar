@@ -21,6 +21,9 @@ dashboard:
   title: Opportunity Radar
   # Where GitHub Pages publishes the dashboard (used for links in the email).
   url: https://theaaravpatel.github.io/opportunity-radar/
+  # The GitHub repo (owner/name): the Suggested tab's Approve / Reject buttons
+  # open issues here, which the approve workflow acts on.
+  repo: TheAaravPatel/opportunity-radar
   # Closed items stay visible (greyed out) for this many days.
   keep_closed_days: 14
   # Links shown in the Sources panel for things we deliberately don't automate.
@@ -59,7 +62,8 @@ llm:
 
 discovery:
   enabled: true                   # weekly web search for new sources (needs ANTHROPIC_API_KEY)
-  max_searches: 15
+  max_searches: 15                # web searches per weekly run (about $0.01 each, plus Claude's tokens)
+  max_suggestions: 8              # at most this many new suggestions per week
 
 http:
   # Descriptive User-Agent so site owners know who we are (no personal info).
