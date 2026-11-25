@@ -44,7 +44,9 @@ dashboard:
       why: The careers site blocks automated requests (HTTP 403).
 
 digest:
-  enabled: true
+  # Off: the dashboard is enough (no Gmail secrets needed). Set true to get the
+  # daily email - then add GMAIL_ADDRESS + GMAIL_APP_PASSWORD (see README).
+  enabled: false
   deadline_window_days: 14        # "Deadlines in the next N days" section
   reminder_days: [14, 7, 2]       # extra reminder on exactly these days before a deadline
   expected_open_warning_days: 14  # "usually opens in 2 weeks" warning
